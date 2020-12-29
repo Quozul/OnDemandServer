@@ -1,0 +1,4 @@
+name: On demand server
+main: dev.quozul.BungeePlugin.Main
+version: 1.0
+author: Quozul
