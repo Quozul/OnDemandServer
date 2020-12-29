@@ -1,4 +1,8 @@
+# Message send to a player trying to switch to a stopped server
 redirect_message: 'Server is starting, you''ll be automatically redirected.'
+
+# Delay before the servers stops in minutes
+stop_delay: 1
 
 servers:
   # This is an example for a server hosted on the same Windows machine under the port 25564

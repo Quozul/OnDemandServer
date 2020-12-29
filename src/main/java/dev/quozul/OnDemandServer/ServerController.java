@@ -50,7 +50,7 @@ public class ServerController {
         String address = serverInfo.getSocketAddress().toString();
         boolean processRunning = processes.containsKey(address);
 
-        return serverRunningOnPort && processRunning;
+        return serverRunningOnPort || processRunning;
     }
 
     /**
@@ -93,7 +93,7 @@ public class ServerController {
             });
 
             // Stop server in 1 minute if server is empty
-            ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(address, serverInfo), 1L, TimeUnit.MINUTES);
+            ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(address, serverInfo), Main.configuration.getInt("stop_delay"), TimeUnit.MINUTES);
         } catch (IOException ioException) {
             ioException.printStackTrace();
         }
@@ -109,14 +109,28 @@ public class ServerController {
         int players = serverInfo.getPlayers().size();
         if (players > 0) return;
 
-        String port = serverInfo.getSocketAddress().toString();
-        boolean processRunning = processes.containsKey(port);
+        String address = serverInfo.getSocketAddress().toString();
+        boolean processRunning = processes.containsKey(address);
         if (!processRunning) return;
 
         System.out.println("Stopping server in 1 minute");
 
         // Stop in 1 minute
-        ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(port, serverInfo), 1L, TimeUnit.MINUTES);
+        ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(address, serverInfo), Main.configuration.getInt("stop_delay"), TimeUnit.MINUTES);
+    }
 
+    public static void stopAllServers() {
+        processes.forEach((address, process) -> {
+            try {
+                System.out.println("Stopping server...");
+                Stop.stopServer(process);
+                process.waitFor();
+                System.out.println("Server stopped!");
+                process.destroy();
+                processes.remove(address);
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
     }
 }
