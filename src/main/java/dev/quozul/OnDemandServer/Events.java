@@ -41,8 +41,6 @@ public class Events implements Listener {
         boolean serverRunningOnPort = !isAvailable(port);
         boolean processRunning = processes.containsKey(port);
 
-        System.out.println(!serverRunningOnPort && !processRunning);
-
         if (!serverRunningOnPort && !processRunning) {
             System.out.println("Starting server " + e.getTarget().getName() + "...");
 
@@ -58,24 +56,32 @@ public class Events implements Listener {
 
                         // read the output from the command
                         while ((s = stdInput.readLine()) != null) {
-                            System.out.println(s);
-                        }
+                            if (s.contains("Done")) {
+                                System.out.println("Server started!");
 
-                        System.out.println("Process done.");
+                                if (e.getPlayer().isConnected()) {
+                                    e.getPlayer().connect(e.getTarget());
+                                }
+
+                                break;
+                            }
+                        }
                     } catch (IOException ioException) {
                         ioException.printStackTrace();
                     }
                 });
 
                 // Kick
-                TextComponent reason = new TextComponent();
+                /*TextComponent reason = new TextComponent();
                 reason.setText("Server is starting, try again in a few seconds.");
                 e.getPlayer().disconnect(reason);
-                e.setCancelled(true);
+                e.setCancelled(true);*/
+
+                e.getRequest().setRetry(false);
 
                 // Wait for server to start
                 /*e.getRequest().setRetry(false);
-                e.getRequest().setConnectTimeout(30000);*/
+                e.getRequest().setConnectTimeout(120 * 1000);*/
 
                 // Stop server in 1 minute if server is empty
                 ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(port, e.getTarget()), 1L, TimeUnit.MINUTES);
