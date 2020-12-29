@@ -22,7 +22,7 @@ public class Stop implements Runnable {
             return;
         }
 
-        Process process = Events.processes.get(this.port);
+        Process process = ServerController.processes.get(this.port);
         if (process == null) return;
 
         try {
@@ -31,7 +31,7 @@ public class Stop implements Runnable {
             process.waitFor();
             System.out.println("Server stopped!");
             process.destroy();
-            Events.processes.remove(this.port);
+            ServerController.processes.remove(this.port);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
