@@ -45,8 +45,6 @@ public class Events implements Listener {
 
         if (!serverRunningOnPort && !processRunning) {
             System.out.println("Starting server " + e.getTarget().getName() + "...");
-            TextComponent reason = new TextComponent();
-            reason.setText("Server is starting, try again in a minute.");
 
             try {
                 Process p = Runtime.getRuntime().exec(commands.get(port));
@@ -55,9 +53,8 @@ public class Events implements Listener {
                 // Async print process
                 ProxyServer.getInstance().getScheduler().runAsync(Main.plugin, () -> {
                     try {
-                        String s = null;
+                        String s;
                         BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                        BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
                         // read the output from the command
                         while ((s = stdInput.readLine()) != null) {
@@ -70,18 +67,23 @@ public class Events implements Listener {
                     }
                 });
 
-                /*e.getPlayer().disconnect(reason);
-                e.setCancelled(true);*/
+                // Kick
+                TextComponent reason = new TextComponent();
+                reason.setText("Server is starting, try again in a few seconds.");
+                e.getPlayer().disconnect(reason);
+                e.setCancelled(true);
+
+                // Wait for server to start
+                /*e.getRequest().setRetry(false);
+                e.getRequest().setConnectTimeout(30000);*/
+
+                // Stop server in 1 minute if server is empty
+                ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(port, e.getTarget()), 1L, TimeUnit.MINUTES);
             } catch (IOException ioException) {
                 ioException.printStackTrace();
             }
         } else {
             System.out.println("Connecting to " + e.getTarget().getName() + "...");
-        }
-
-        if (processRunning) {
-            e.getRequest().setRetry(false);
-            e.getRequest().setConnectTimeout(30000);
         }
     }
 
@@ -94,41 +96,9 @@ public class Events implements Listener {
         boolean processRunning = processes.containsKey(port);
         if (!processRunning) return;
 
-        System.out.println("Stopping server in 5 seconds");
+        System.out.println("Stopping server in 1 minute");
 
-        // Stop in 5 seconds
-        ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Runnable() {
-            @Override
-            public void run() {
-                int players = e.getTarget().getPlayers().size();
-                if (players > 0) {
-                    System.out.println("Players on server, not stopping it");
-                    return;
-                }
-
-                Process process = processes.get(port);
-
-                try {
-                    System.out.println("Stopping server...");
-                    stopServer(process);
-                    process.waitFor();
-                    System.out.println("Server stopped!");
-                    process.destroy();
-                    Events.processes.remove(port);
-                } catch (IOException | InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }, 5L, TimeUnit.SECONDS);
-    }
-
-    static public void stopServer(Process p) throws IOException {
-        OutputStream stdin = p.getOutputStream();
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stdin));
-        InputStream stdout = p.getInputStream();
-
-        writer.write("stop\n");
-        writer.flush();
-        writer.close();
+        // Stop in 1 minute
+        ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(port, e.getTarget()), 1L, TimeUnit.MINUTES);
     }
 }
