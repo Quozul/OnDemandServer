@@ -10,7 +10,11 @@ import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class ServerController {
     /**
@@ -28,16 +32,10 @@ public class ServerController {
         return portFree;
     }
 
-    private HashMap<Integer, String> commands;
-    static HashMap<Integer, Process> processes;
+    static HashMap<String, Process> processes;
 
     ServerController() {
-        this.commands = new HashMap<>();
-        this.processes = new HashMap<>();
-        // OTG server
-        this.commands.put(25564, "cmd /k cd \"C:\\Users\\erwan\\Documents\\Servers\\OTG test\" && run.cmd");
-        // Dev server
-        this.commands.put(25563, "cmd /k cd \"C:\\Users\\erwan\\Documents\\Servers\\Dev server\" && run.bat");
+        processes = new HashMap<>();
     }
 
     /**
@@ -48,7 +46,9 @@ public class ServerController {
     public boolean isServerStarted(ServerInfo serverInfo) {
         int port = ((InetSocketAddress) serverInfo.getSocketAddress()).getPort();
         boolean serverRunningOnPort = !isAvailable(port);
-        boolean processRunning = processes.containsKey(port);
+
+        String address = serverInfo.getSocketAddress().toString();
+        boolean processRunning = processes.containsKey(address);
 
         return serverRunningOnPort && processRunning;
     }
@@ -59,11 +59,15 @@ public class ServerController {
      * @param player Move the given player once the server is started
      */
     public void startServer(ServerInfo serverInfo, ProxiedPlayer player) {
-        int port = ((InetSocketAddress) serverInfo.getSocketAddress()).getPort();
+        String address = serverInfo.getSocketAddress().toString();
+        List<?> servers = Main.configuration.getList("servers").stream()
+                .filter((Predicate<Object>) o -> ((LinkedHashMap<String, String>) o).get("address").equals(address))
+                .collect(Collectors.toList());
+        String command = ((LinkedHashMap<String, String>) servers.get(0)).get("command");
 
         try {
-            Process p = Runtime.getRuntime().exec(commands.get(port));
-            processes.put(port, p);
+            Process p = Runtime.getRuntime().exec(command);
+            processes.put(address, p);
 
             // Async print process
             ProxyServer.getInstance().getScheduler().runAsync(Main.plugin, () -> {
@@ -89,7 +93,7 @@ public class ServerController {
             });
 
             // Stop server in 1 minute if server is empty
-            ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(port, serverInfo), 1L, TimeUnit.MINUTES);
+            ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(address, serverInfo), 1L, TimeUnit.MINUTES);
         } catch (IOException ioException) {
             ioException.printStackTrace();
         }
@@ -105,7 +109,7 @@ public class ServerController {
         int players = serverInfo.getPlayers().size();
         if (players > 0) return;
 
-        int port = ((InetSocketAddress) serverInfo.getSocketAddress()).getPort();
+        String port = serverInfo.getSocketAddress().toString();
         boolean processRunning = processes.containsKey(port);
         if (!processRunning) return;
 

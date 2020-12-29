@@ -7,9 +7,9 @@ import java.io.*;
 
 public class Stop implements Runnable {
     private final ServerInfo e;
-    private final int port;
+    private final String port;
 
-    Stop(int port, ServerInfo e) {
+    Stop(String port, ServerInfo e) {
         this.e = e;
         this.port = port;
     }

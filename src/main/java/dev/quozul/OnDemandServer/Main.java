@@ -1,9 +1,18 @@
 package dev.quozul.OnDemandServer;
 
 import net.md_5.bungee.api.plugin.Plugin;
+import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.config.ConfigurationProvider;
+import net.md_5.bungee.config.YamlConfiguration;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
 
 public class Main extends Plugin {
     static Plugin plugin;
+    static Configuration configuration;
 
     @Override
     public void onEnable() {
@@ -12,8 +21,33 @@ public class Main extends Plugin {
         // BungeeCord already does so
         getLogger().info("Yay! It loads!");
         getProxy().getPluginManager().registerListener(this, new Events());
+
+        // Write default configuration file
+        if (!getDataFolder().exists())
+            getDataFolder().mkdir();
+
+        File file = new File(getDataFolder(), "config.yml");
+
+        if (!file.exists()) {
+            try (InputStream in = getResourceAsStream("config.yml")) {
+                Files.copy(in, file.toPath());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Load configuration
+        try {
+            Main.configuration = ConfigurationProvider.getProvider(YamlConfiguration.class)
+                    .load(new File(getDataFolder(), "config.yml"));
+
+            System.out.println(configuration.get("servers"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
+    // TODO: Close Minecraft server on Proxy stop
     /*@Override
     public void onDisable() {
         Events.processes.forEach((port, p) -> {
