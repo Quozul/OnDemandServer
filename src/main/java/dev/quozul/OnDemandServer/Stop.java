@@ -6,17 +6,17 @@ import java.io.*;
 
 
 public class Stop implements Runnable {
-    private final ServerInfo e;
+    private final ServerInfo serverInfo;
     private final String port;
 
     Stop(String port, ServerInfo e) {
-        this.e = e;
+        this.serverInfo = e;
         this.port = port;
     }
 
     @Override
     public void run() {
-        int players = this.e.getPlayers().size();
+        int players = this.serverInfo.getPlayers().size();
         if (players > 0) {
             System.out.println("Players on server, not stopping it");
             return;
@@ -25,6 +25,15 @@ public class Stop implements Runnable {
         Process process = ServerController.processes.get(this.port);
         if (process == null) return;
 
+        // Remove process if not alive
+        if (!process.isAlive()) {
+            process.destroy();
+            ServerController.processes.remove(this.port);
+            System.out.println("Server not found, removing it from list");
+            return;
+        }
+
+        // Stop server then remove process
         try {
             System.out.println("Stopping server...");
             stopServer(process);

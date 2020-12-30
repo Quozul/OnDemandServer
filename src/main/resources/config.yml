@@ -10,7 +10,7 @@ stop_delay: 1
 # Command used to stop servers
 # Do not change unless you know what you're doing
 # Useful in case you start servers in a detached screen
-stop_command: 'stop\n'
+stop_command: "stop\n"  # For the \n to work, must be between quotes ""
 
 servers:
   # This is an example for a server hosted on the same Windows machine under the port 25564
