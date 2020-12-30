@@ -7,6 +7,11 @@ kick_message: 'Server is starting, retry in a few seconds.'
 # Delay before the servers stops in minutes
 stop_delay: 1
 
+# Command used to stop servers
+# Do not change unless you know what you're doing
+# Useful in case you start servers in a detached screen
+stop_command: 'stop\n'
+
 servers:
   # This is an example for a server hosted on the same Windows machine under the port 25564
   - address: 'localhost/127.0.0.1:25564'

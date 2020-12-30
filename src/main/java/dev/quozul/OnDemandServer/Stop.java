@@ -41,7 +41,7 @@ public class Stop implements Runnable {
         OutputStream stdin = p.getOutputStream();
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stdin));
 
-        writer.write("stop\n");
+        writer.write(Main.configuration.getString("stop_command"));
         writer.flush();
         writer.close();
     }
