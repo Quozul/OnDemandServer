@@ -72,7 +72,7 @@ public class ServerController {
      * @param address Target's address
      * @return Server's information
      */
-    public LinkedHashMap<String, String> getServerFromConfig(String address) {
+    public LinkedHashMap<String, String> getServerConfig(String address) {
         List<?> servers = Main.configuration.getList("servers").stream()
                 .filter((Predicate<Object>) o -> ((LinkedHashMap<String, String>) o).get("address").equals(address))
                 .collect(Collectors.toList());
@@ -87,9 +87,18 @@ public class ServerController {
      * @param serverInfo Target
      * @return Server's information
      */
-    public LinkedHashMap<String, String> getServerFromConfig(ServerInfo serverInfo) {
+    public LinkedHashMap<String, String> getServerConfig(ServerInfo serverInfo) {
         String address = serverInfo.getSocketAddress().toString();
-        return getServerFromConfig(address);
+        return getServerConfig(address);
+    }
+
+    /**
+     * Tell if the server can be controlled by the proxy
+     * @param serverInfo Target
+     * @return The server can be controlled by the proxy
+     */
+    public boolean canBeControlled(ServerInfo serverInfo) {
+        return getServerConfig(serverInfo) != null;
     }
 
     /**
@@ -99,7 +108,7 @@ public class ServerController {
      */
     public void startServer(ServerInfo serverInfo, ProxiedPlayer player) {
         String address = serverInfo.getSocketAddress().toString();
-        LinkedHashMap<String, String> server = getServerFromConfig(address);
+        LinkedHashMap<String, String> server = getServerConfig(address);
 
         if (server == null) {
             System.out.println("Server can't be started, not in config file!");

@@ -6,8 +6,6 @@ import net.md_5.bungee.api.event.*;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
-import java.util.LinkedHashMap;
-
 
 public class Events implements Listener {
     private ServerController serverController;
@@ -26,7 +24,7 @@ public class Events implements Listener {
             System.out.println("Connecting to " + target.getName() + "...");
             e.getRequest().setRetry(false);
 
-            if (this.serverController.getServerFromConfig(target) != null && !this.serverController.isControlledByProxy(target)) {
+            if (this.serverController.canBeControlled(target) && !this.serverController.isControlledByProxy(target)) {
                 TextComponent textComponent = new TextComponent("This server is not controlled by the proxy, please inform the server administrator.");
                 e.getPlayer().sendMessage(textComponent);
             }
@@ -50,9 +48,8 @@ public class Events implements Listener {
 
     @EventHandler
     public void onServerDisconnect(ServerDisconnectEvent e) {
-        LinkedHashMap<String, String> server = this.serverController.getServerFromConfig(e.getTarget());
-
         // If server was started by the proxy
-        if (server != null) this.serverController.stopServer(e.getTarget());
+        if (this.serverController.canBeControlled(e.getTarget()))
+            this.serverController.stopServer(e.getTarget());
     }
 }
