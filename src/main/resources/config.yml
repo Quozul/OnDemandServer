@@ -14,6 +14,6 @@ stop_command: "stop\n"  # For the \n to work, must be between quotes ""
 
 servers:
   # This is an example for a server hosted on the same Windows machine under the port 25564
-  - address: 'localhost/127.0.0.1:25564'
+  - address: '/127.0.0.1:25564'
     command: 'cmd /k cd "C:\Servers\test" && start.bat'
   # TODO: Example on Linux to a distant server

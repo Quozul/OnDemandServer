@@ -42,6 +42,9 @@ public class Main extends Plugin {
 
         // Register events
         getProxy().getPluginManager().registerListener(this, new Events());
+
+        // Register commands
+        getProxy().getPluginManager().registerCommand(this, new ServerReport());
     }
 
     // TODO: Close Minecraft server on Proxy stop

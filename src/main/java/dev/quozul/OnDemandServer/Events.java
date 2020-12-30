@@ -8,10 +8,10 @@ import net.md_5.bungee.event.EventHandler;
 
 
 public class Events implements Listener {
-    private ServerController serverController;
+    public static ServerController serverController;
 
     Events() {
-        this.serverController = new ServerController();
+        serverController = new ServerController();
     }
 
     // TODO: Start lobby on ping
@@ -20,17 +20,17 @@ public class Events implements Listener {
     public void onServerConnect(ServerConnectEvent e) {
         ServerInfo target = e.getTarget();
 
-        if (this.serverController.isServerStarted(target)) {
+        if (serverController.isServerStarted(target)) {
             System.out.println("Connecting to " + target.getName() + "...");
             e.getRequest().setRetry(false);
 
-            if (this.serverController.canBeControlled(target) && !this.serverController.isControlledByProxy(target)) {
+            if (serverController.canBeControlled(target) && !serverController.isControlledByProxy(target)) {
                 TextComponent textComponent = new TextComponent("This server is not controlled by the proxy, please inform the server administrator.");
                 e.getPlayer().sendMessage(textComponent);
             }
-        } else {
+        } else if (serverController.canBeControlled(target)) {
             System.out.println("Starting server " + target.getName() + "...");
-            this.serverController.startServer(target, e.getPlayer());
+            serverController.startServer(target, e.getPlayer());
             e.getRequest().setRetry(false);
 
             if (e.getPlayer().getServer() != null) {
@@ -49,7 +49,7 @@ public class Events implements Listener {
     @EventHandler
     public void onServerDisconnect(ServerDisconnectEvent e) {
         // If server was started by the proxy
-        if (this.serverController.canBeControlled(e.getTarget()))
-            this.serverController.stopServer(e.getTarget());
+        if (serverController.canBeControlled(e.getTarget()))
+            serverController.stopServer(e.getTarget());
     }
 }

@@ -110,11 +110,6 @@ public class ServerController {
         String address = serverInfo.getSocketAddress().toString();
         LinkedHashMap<String, String> server = getServerConfig(address);
 
-        if (server == null) {
-            System.out.println("Server can't be started, not in config file!");
-            return;
-        }
-
         String command = server.get("command");
 
         try {
