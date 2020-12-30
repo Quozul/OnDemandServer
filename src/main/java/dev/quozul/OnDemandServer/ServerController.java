@@ -58,16 +58,55 @@ public class ServerController {
     }
 
     /**
+     * Check if the given server is controlled by the proxy server
+     * @param serverInfo Target
+     * @return Is controlled by proxy
+     */
+    public boolean isControlledByProxy(ServerInfo serverInfo) {
+        String address = serverInfo.getSocketAddress().toString();
+        return processes.containsKey(address);
+    }
+
+    /**
+     * Return the LinkedHashMap of the server from the config file
+     * @param address Target's address
+     * @return Server's information
+     */
+    public LinkedHashMap<String, String> getServerFromConfig(String address) {
+        List<?> servers = Main.configuration.getList("servers").stream()
+                .filter((Predicate<Object>) o -> ((LinkedHashMap<String, String>) o).get("address").equals(address))
+                .collect(Collectors.toList());
+
+        if (servers.size() == 0) return null;
+
+        return (LinkedHashMap<String, String>) servers.get(0);
+    }
+
+    /**
+     * Return the LinkedHashMap of the server from the config file
+     * @param serverInfo Target
+     * @return Server's information
+     */
+    public LinkedHashMap<String, String> getServerFromConfig(ServerInfo serverInfo) {
+        String address = serverInfo.getSocketAddress().toString();
+        return getServerFromConfig(address);
+    }
+
+    /**
      * Starts the given server
      * @param serverInfo Target
      * @param player Move the given player once the server is started
      */
     public void startServer(ServerInfo serverInfo, ProxiedPlayer player) {
         String address = serverInfo.getSocketAddress().toString();
-        List<?> servers = Main.configuration.getList("servers").stream()
-                .filter((Predicate<Object>) o -> ((LinkedHashMap<String, String>) o).get("address").equals(address))
-                .collect(Collectors.toList());
-        String command = ((LinkedHashMap<String, String>) servers.get(0)).get("command");
+        LinkedHashMap<String, String> server = getServerFromConfig(address);
+
+        if (server == null) {
+            System.out.println("Server can't be started, not in config file!");
+            return;
+        }
+
+        String command = server.get("command");
 
         try {
             Process p = Runtime.getRuntime().exec(command);
