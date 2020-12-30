@@ -27,9 +27,15 @@ public class Events implements Listener {
             this.serverController.startServer(target, e.getPlayer());
             e.getRequest().setRetry(false);
 
-            if (e.getPlayer().isConnected()) {
+            if (e.getPlayer().getServer() != null) {
                 TextComponent textComponent = new TextComponent(Main.configuration.getString("redirect_message"));
                 e.getPlayer().sendMessage(textComponent);
+            } else {
+                // Kick player
+                TextComponent reason = new TextComponent();
+                reason.setText(Main.configuration.getString("kick_message"));
+                e.getPlayer().disconnect(reason);
+                e.setCancelled(true);
             }
         }
     }

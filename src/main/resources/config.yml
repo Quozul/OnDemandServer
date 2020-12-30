@@ -1,6 +1,9 @@
 # Message send to a player trying to switch to a stopped server
 redirect_message: 'Server is starting, you''ll be automatically redirected.'
 
+# Message to send when a non-connected player tries to connect to a non-started server
+kick_message: 'Server is starting, retry in a few seconds.'
+
 # Delay before the servers stops in minutes
 stop_delay: 1
 

@@ -33,8 +33,12 @@ public class ServerController {
     }
 
     static HashMap<String, Process> processes;
+    private final int stop_delay;
+    private final String stop_command;
 
     ServerController() {
+        this.stop_delay = Main.configuration.getInt("stop_delay");
+        this.stop_command = Main.configuration.getString("stop_command");
         processes = new HashMap<>();
     }
 
@@ -92,8 +96,8 @@ public class ServerController {
                 }
             });
 
-            // Stop server in 1 minute if server is empty
-            ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(address, serverInfo), Main.configuration.getInt("stop_delay"), TimeUnit.MINUTES);
+            // Stop server after the delay is over if server is empty
+            ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(address, serverInfo), this.stop_delay, TimeUnit.MINUTES);
         } catch (IOException ioException) {
             ioException.printStackTrace();
         }
@@ -113,10 +117,10 @@ public class ServerController {
         boolean processRunning = processes.containsKey(address);
         if (!processRunning) return;
 
-        System.out.println("Stopping server in 1 minute");
+        System.out.println("Stopping server in " + this.stop_delay + " minute");
 
         // Stop in 1 minute
-        ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(address, serverInfo), Main.configuration.getInt("stop_delay"), TimeUnit.MINUTES);
+        ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(address, serverInfo), this.stop_delay, TimeUnit.MINUTES);
     }
 
     public static void stopAllServers() {

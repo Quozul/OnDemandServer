@@ -17,10 +17,6 @@ public class Main extends Plugin {
     @Override
     public void onEnable() {
         Main.plugin = this;
-        // You should not put an enable message in your plugin.
-        // BungeeCord already does so
-        getLogger().info("Yay! It loads!");
-        getProxy().getPluginManager().registerListener(this, new Events());
 
         // Write default configuration file
         if (!getDataFolder().exists())
@@ -40,11 +36,12 @@ public class Main extends Plugin {
         try {
             Main.configuration = ConfigurationProvider.getProvider(YamlConfiguration.class)
                     .load(new File(getDataFolder(), "config.yml"));
-
-            System.out.println(configuration.get("servers"));
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        // Register events
+        getProxy().getPluginManager().registerListener(this, new Events());
     }
 
     // TODO: Close Minecraft server on Proxy stop
