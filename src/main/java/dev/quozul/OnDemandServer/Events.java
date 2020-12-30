@@ -15,11 +15,12 @@ public class Events implements Listener {
         serverController = new ServerController();
     }
 
-    // TODO: Start lobby on ping
+    // TODO: Start default server on ping
     // TODO: Display time remaining for server to start in MOTD per player
 
     @EventHandler
     public void onServerConnect(ServerConnectEvent e) {
+        // TODO: Clear server shutdown tasks when player connects to server
         ServerInfo target = e.getTarget();
 
         if (serverController.isServerStarted(target)) {
@@ -51,8 +52,9 @@ public class Events implements Listener {
     @EventHandler
     public void onServerDisconnect(ServerDisconnectEvent e) {
         // If server was started by the proxy
-        if (serverController.canBeControlled(e.getTarget()))
+        if (serverController.canBeControlled(e.getTarget())) {
             serverController.stopServer(e.getTarget());
+        }
     }
 
     @EventHandler
