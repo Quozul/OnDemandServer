@@ -4,9 +4,7 @@ import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.HashMap;
@@ -32,6 +30,11 @@ public class ServerController {
         return portFree;
     }
 
+    // TODO: Store which player requested the server to start
+    static HashMap<String, ProxiedPlayer> startedBy;
+    // TODO: Store the time it takes for each server to start
+    // TODO: Display the remaining time for the starting server to start
+    // TODO: Do something with the time stored
     static HashMap<String, Process> processes;
     private final int stop_delay;
     private final String stop_command;
@@ -40,6 +43,7 @@ public class ServerController {
         this.stop_delay = Main.configuration.getInt("stop_delay");
         this.stop_command = Main.configuration.getString("stop_command");
         processes = new HashMap<>();
+        startedBy = new HashMap<>();
     }
 
     /**
@@ -115,32 +119,19 @@ public class ServerController {
         try {
             Process p = Runtime.getRuntime().exec(command);
             processes.put(address, p);
+            startedBy.put(address, player);
 
-            // Async print process
+            // TODO: Ping server until it is started
             ProxyServer.getInstance().getScheduler().runAsync(Main.plugin, () -> {
                 try {
-                    String s;
-                    BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-                    // read the output from the command
-                    while ((s = stdInput.readLine()) != null) {
-                        if (s.contains("Done")) {
-                            System.out.println("Server started!");
-
-                            if (player.isConnected()) {
-                                player.connect(serverInfo);
-                            }
-
-                            break;
-                        }
-                    }
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
+                    new Ping(serverInfo);
+                } catch (StackOverflowError e) {
+                    System.out.println("Server took too much time to start, stackoverflow error!");
                 }
             });
 
             // Stop server after the delay is over if server is empty
-            ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(address, serverInfo), this.stop_delay, TimeUnit.MINUTES);
+            ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(serverInfo), this.stop_delay, TimeUnit.MINUTES);
         } catch (IOException ioException) {
             ioException.printStackTrace();
         }
@@ -163,7 +154,7 @@ public class ServerController {
         System.out.println("Stopping server in " + this.stop_delay + " minute");
 
         // Stop in 1 minute
-        ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(address, serverInfo), this.stop_delay, TimeUnit.MINUTES);
+        ProxyServer.getInstance().getScheduler().schedule(Main.plugin, new Stop(serverInfo), this.stop_delay, TimeUnit.MINUTES);
     }
 
     public static void stopAllServers() {

@@ -7,11 +7,11 @@ import java.io.*;
 
 public class Stop implements Runnable {
     private final ServerInfo serverInfo;
-    private final String port;
+    private final String address;
 
-    Stop(String port, ServerInfo e) {
-        this.serverInfo = e;
-        this.port = port;
+    Stop(ServerInfo serverInfo) {
+        this.serverInfo = serverInfo;
+        this.address = serverInfo.getSocketAddress().toString();
     }
 
     @Override
@@ -22,13 +22,13 @@ public class Stop implements Runnable {
             return;
         }
 
-        Process process = ServerController.processes.get(this.port);
+        Process process = ServerController.processes.get(this.address);
         if (process == null) return;
 
         // Remove process if not alive
         if (!process.isAlive()) {
             process.destroy();
-            ServerController.processes.remove(this.port);
+            ServerController.processes.remove(this.address);
             System.out.println("Server not found, removing it from list");
             return;
         }
@@ -40,7 +40,7 @@ public class Stop implements Runnable {
             process.waitFor();
             System.out.println("Server stopped!");
             process.destroy();
-            ServerController.processes.remove(this.port);
+            ServerController.processes.remove(this.address);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }

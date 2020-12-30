@@ -2,6 +2,7 @@ package dev.quozul.OnDemandServer;
 
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.*;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
@@ -15,6 +16,7 @@ public class Events implements Listener {
     }
 
     // TODO: Start lobby on ping
+    // TODO: Display time remaining for server to start in MOTD per player
 
     @EventHandler
     public void onServerConnect(ServerConnectEvent e) {
@@ -51,5 +53,19 @@ public class Events implements Listener {
         // If server was started by the proxy
         if (serverController.canBeControlled(e.getTarget()))
             serverController.stopServer(e.getTarget());
+    }
+
+    @EventHandler
+    public void onServerStarted(ServerStartedEvent e) {
+        String address = e.getServerInfo().getSocketAddress().toString();
+        long time = e.getPing().getTimeTook();
+        ProxiedPlayer player = ServerController.startedBy.get(address);
+
+        System.out.println("Server " + address + " requested by " + player.getName() + " started in " + time / 100 + "s");
+
+        // Move player to started server
+        if (player.isConnected()) {
+            player.connect(e.getServerInfo());
+        }
     }
 }
