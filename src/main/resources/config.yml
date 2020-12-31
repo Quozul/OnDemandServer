@@ -12,6 +12,12 @@ stop_delay: 1
 # Useful in case you start servers in a detached screen
 stop_command: "stop\n"  # For the \n to work, must be between quotes ""
 
+# Amount of servers that the plugin can start
+# Set to <= 0 for no limit
+max_servers: 1
+# Message sent when a player tries to connect when there are already too many servers running
+too_many_running: "Too much servers are already running!"
+
 servers:
   # This is an example for a server hosted on the same Windows machine under the port 25564
   - address: '/127.0.0.1:25564'

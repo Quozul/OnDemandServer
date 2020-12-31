@@ -1,6 +1,7 @@
 package dev.quozul.OnDemandServer;
 
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.scheduler.ScheduledTask;
@@ -39,12 +40,14 @@ public class ServerController {
     // TODO: Do something with the time stored
     private HashMap<SocketAddress, Process> processes;
     private HashMap<SocketAddress, ScheduledTask> stopTasks;
+
     private final int stopDelay;
-    private final String stop_command;
+    private final int maxServers;
 
     ServerController() {
         this.stopDelay = Main.configuration.getInt("stop_delay");
-        this.stop_command = Main.configuration.getString("stop_command");
+        this.maxServers = Main.configuration.getInt("max_servers");
+
         this.processes = new HashMap<>();
         this.startedBy = new HashMap<>();
         this.stopTasks = new HashMap<>();
@@ -114,7 +117,11 @@ public class ServerController {
      * @param serverInfo Target
      * @param player Move the given player once the server is started
      */
-    public void startServer(ServerInfo serverInfo, ProxiedPlayer player) {
+    public char startServer(ServerInfo serverInfo, ProxiedPlayer player) {
+        if (this.maxServers > 0 && this.maxServers <= this.processes.size()) {
+            return 1;
+        }
+
         SocketAddress address = serverInfo.getSocketAddress();
         LinkedHashMap<String, String> server = getServerConfig(address);
 
@@ -133,8 +140,12 @@ public class ServerController {
                     System.out.println("Server took too much time to start, stackoverflow error!");
                 }
             });
+
+            return 0;
         } catch (IOException ioException) {
             ioException.printStackTrace();
+
+            return 2;
         }
     }
 

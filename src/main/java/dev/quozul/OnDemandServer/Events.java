@@ -25,20 +25,48 @@ public class Events implements Listener {
             System.out.println("Connecting to " + target.getName() + "...");
             e.getRequest().setRetry(false);
         } else if (serverController.canBeControlled(target)) {
-            System.out.println("Starting server " + target.getName() + "...");
-            serverController.startServer(target, e.getPlayer());
-            e.getRequest().setRetry(false);
+            char isStarting = serverController.startServer(target, e.getPlayer());
+            TextComponent message = new TextComponent();
 
-            if (e.getPlayer().getServer() != null) {
-                TextComponent textComponent = new TextComponent(Main.configuration.getString("redirect_message"));
-                e.getPlayer().sendMessage(textComponent);
-            } else {
-                // Kick player
-                TextComponent reason = new TextComponent();
-                reason.setText(Main.configuration.getString("kick_message"));
-                e.getPlayer().disconnect(reason);
-                e.setCancelled(true);
+            switch (isStarting) {
+                case 0:
+                    System.out.println("Starting server " + target.getName() + "...");
+
+                    // If player is already connected
+                    if (e.getPlayer().getServer() != null) {
+                        message.setText(Main.configuration.getString("redirect_message"));
+                        e.getPlayer().sendMessage(message);
+                    } else {
+                        // If plays is connecting, kick player
+                        message.setText(Main.configuration.getString("kick_message"));
+                        e.getPlayer().disconnect(message);
+                        e.setCancelled(true);
+                    }
+
+                    break;
+
+                case 1:
+                    System.out.println("Too much servers are already running!");
+                    message.setText(Main.configuration.getString("too_many_running"));
+
+                    if (e.getPlayer().isConnected()) e.getPlayer().sendMessage(message);
+                    else e.getPlayer().disconnect(message);
+
+                    break;
+
+                default:
+                    System.out.println("Something went wrong when starting the server!");
+                    message.setText("Something went wrong when starting the server!");
+
+                    if (e.getPlayer().isConnected()) e.getPlayer().sendMessage(message);
+                    else e.getPlayer().disconnect(message);
+
+                    break;
+
             }
+
+            e.getRequest().setRetry(false);
+            e.setCancelled(true);
         }
     }
 
