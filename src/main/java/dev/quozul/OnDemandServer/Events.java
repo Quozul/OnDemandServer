@@ -20,19 +20,10 @@ public class Events implements Listener {
     @EventHandler
     public void onServerConnect(ServerConnectEvent e) {
         ServerInfo target = e.getTarget();
-        String address = e.getTarget().getSocketAddress().toString();
-
-        // Clear server shutdown tasks when player connects to server
-        serverController.clearStopTask(target);
 
         if (serverController.isServerStarted(target)) {
             System.out.println("Connecting to " + target.getName() + "...");
             e.getRequest().setRetry(false);
-
-            if (serverController.canBeControlled(target) && !serverController.isControlledByProxy(target)) {
-                TextComponent textComponent = new TextComponent("This server is not controlled by the proxy, please inform the server administrator.");
-                e.getPlayer().sendMessage(textComponent);
-            }
         } else if (serverController.canBeControlled(target)) {
             System.out.println("Starting server " + target.getName() + "...");
             serverController.startServer(target, e.getPlayer());
@@ -48,6 +39,18 @@ public class Events implements Listener {
                 e.getPlayer().disconnect(reason);
                 e.setCancelled(true);
             }
+        }
+    }
+
+    @EventHandler
+    public void onServerConnected(ServerConnectedEvent e) {
+        ServerInfo target = e.getServer().getInfo();
+        // Clear server shutdown tasks when player connects to server
+        serverController.clearStopTask(target);
+
+        if (serverController.canBeControlled(target) && !serverController.isControlledByProxy(target)) {
+            TextComponent textComponent = new TextComponent("This server is not controlled by the proxy, please inform the server administrator.");
+            e.getPlayer().sendMessage(textComponent);
         }
     }
 
