@@ -8,20 +8,22 @@ import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
 
+import java.net.SocketAddress;
+
+import static dev.quozul.OnDemandServer.Main.serverController;
+
+
 public class Events implements Listener {
-    public static ServerController serverController;
-
-    Events() {
-        serverController = new ServerController();
-    }
-
     // TODO: Start default server on ping
     // TODO: Display time remaining for server to start in MOTD per player
 
     @EventHandler
     public void onServerConnect(ServerConnectEvent e) {
-        // TODO: Clear server shutdown tasks when player connects to server
         ServerInfo target = e.getTarget();
+        String address = e.getTarget().getSocketAddress().toString();
+
+        // Clear server shutdown tasks when player connects to server
+        serverController.clearStopTask(target);
 
         if (serverController.isServerStarted(target)) {
             System.out.println("Connecting to " + target.getName() + "...");
@@ -59,15 +61,18 @@ public class Events implements Listener {
 
     @EventHandler
     public void onServerStarted(ServerStartedEvent e) {
-        String address = e.getServerInfo().getSocketAddress().toString();
+        ServerInfo serverInfo = e.getServerInfo();
+        SocketAddress address = serverInfo.getSocketAddress();
         long time = e.getPing().getTimeTook();
-        ProxiedPlayer player = ServerController.startedBy.get(address);
+        ProxiedPlayer player = serverController.getStartedBy().get(address);
 
-        System.out.println("Server " + address + " requested by " + player.getName() + " started in " + time / 100 + "s");
+        System.out.println("Server " + address.toString() + " requested by " + player.getName() + " started in " + time / 1000 + "s");
 
         // Move player to started server
         if (player.isConnected()) {
             player.connect(e.getServerInfo());
         }
+
+        serverController.createStopTask(serverInfo);
     }
 }

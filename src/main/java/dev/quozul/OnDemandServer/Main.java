@@ -11,8 +11,9 @@ import java.io.InputStream;
 import java.nio.file.Files;
 
 public class Main extends Plugin {
-    static Plugin plugin;
-    static Configuration configuration;
+    public static Plugin plugin;
+    public static Configuration configuration;
+    public static ServerController serverController;
 
     @Override
     public void onEnable() {
@@ -39,6 +40,8 @@ public class Main extends Plugin {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        Main.serverController = new ServerController();
 
         // Register events
         getProxy().getPluginManager().registerListener(this, new Events());

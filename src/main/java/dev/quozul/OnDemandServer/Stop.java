@@ -3,15 +3,18 @@ package dev.quozul.OnDemandServer;
 import net.md_5.bungee.api.config.ServerInfo;
 
 import java.io.*;
+import java.net.SocketAddress;
+
+import static dev.quozul.OnDemandServer.Main.serverController;
 
 
 public class Stop implements Runnable {
     private final ServerInfo serverInfo;
-    private final String address;
+    private final SocketAddress address;
 
     Stop(ServerInfo serverInfo) {
         this.serverInfo = serverInfo;
-        this.address = serverInfo.getSocketAddress().toString();
+        this.address = serverInfo.getSocketAddress();
     }
 
     @Override
@@ -22,13 +25,13 @@ public class Stop implements Runnable {
             return;
         }
 
-        Process process = ServerController.processes.get(this.address);
+        Process process = serverController.getProcesses().get(this.address);
         if (process == null) return;
 
         // Remove process if not alive
         if (!process.isAlive()) {
             process.destroy();
-            ServerController.processes.remove(this.address);
+            serverController.getProcesses().remove(this.address);
             System.out.println("Server not found, removing it from list");
             return;
         }
@@ -40,18 +43,31 @@ public class Stop implements Runnable {
             process.waitFor();
             System.out.println("Server stopped!");
             process.destroy();
-            ServerController.processes.remove(this.address);
+            serverController.getProcesses().remove(this.address);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    static public void stopServer(Process p) throws IOException {
+    private void stopServer(Process p) throws IOException {
         OutputStream stdin = p.getOutputStream();
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stdin));
 
         writer.write(Main.configuration.getString("stop_command"));
         writer.flush();
         writer.close();
+
+        // Debug
+        try {
+            String s;
+            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+            // read the output from the command
+            while ((s = stdInput.readLine()) != null) {
+                System.out.println(s);
+            }
+        } catch (IOException ioException) {
+            ioException.printStackTrace();
+        }
     }
 }

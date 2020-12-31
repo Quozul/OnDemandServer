@@ -10,6 +10,8 @@ import net.md_5.bungee.api.plugin.Command;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static dev.quozul.OnDemandServer.Main.serverController;
+
 
 public class ServerReport extends Command {
     public ServerReport() {
@@ -27,9 +29,9 @@ public class ServerReport extends Command {
             AtomicBoolean somethingIsWrong = new AtomicBoolean(false);
 
             servers.forEach((name, serverInfo) -> {
-                boolean isControlled = Events.serverController.isControlledByProxy(serverInfo);
-                boolean canBeControlled = Events.serverController.canBeControlled(serverInfo);
-                boolean isStarted = Events.serverController.isServerStarted(serverInfo);
+                boolean isControlled = serverController.isControlledByProxy(serverInfo);
+                boolean canBeControlled = serverController.canBeControlled(serverInfo);
+                boolean isStarted = serverController.isServerStarted(serverInfo);
 
                 boolean isOrphan = isStarted && canBeControlled && !isControlled;
                 boolean isReady = !isStarted && !isControlled && canBeControlled;
