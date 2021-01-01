@@ -1,7 +1,6 @@
 package dev.quozul.OnDemandServer;
 
 import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.scheduler.ScheduledTask;
@@ -14,6 +13,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -34,12 +34,12 @@ public class ServerController {
     }
 
     // Store which player requested the server to start
-    private HashMap<SocketAddress, ProxiedPlayer> startedBy;
+    private final HashMap<SocketAddress, ProxiedPlayer> startedBy;
     // TODO: Store the time it takes for each server to start
     // TODO: Display the remaining time for the starting server to start
     // TODO: Do something with the time stored
-    private HashMap<SocketAddress, Process> processes;
-    private HashMap<SocketAddress, ScheduledTask> stopTasks;
+    private final HashMap<SocketAddress, Process> processes;
+    private final HashMap<SocketAddress, ScheduledTask> stopTasks;
 
     private final int stopDelay;
     private final int maxServers;
@@ -83,7 +83,7 @@ public class ServerController {
      * @param address Target's address
      * @return Server's information
      */
-    public LinkedHashMap<String, String> getServerConfig(SocketAddress address) {
+    private LinkedHashMap<String, String> _getServerConfig(SocketAddress address) {
         List<?> servers = Main.configuration.getList("servers").stream()
                 .filter((Predicate<Object>) o -> ((LinkedHashMap<String, String>) o).get("address").equals(address.toString()))
                 .collect(Collectors.toList());
@@ -92,25 +92,17 @@ public class ServerController {
 
         return (LinkedHashMap<String, String>) servers.get(0);
     }
-
-    /**
-     * Return the LinkedHashMap of the server from the config file
-     * @param serverInfo Target
-     * @return Server's information
-     */
-    public LinkedHashMap<String, String> getServerConfig(ServerInfo serverInfo) {
-        SocketAddress address = serverInfo.getSocketAddress();
-        return this.getServerConfig(address);
-    }
+    public Function<SocketAddress, LinkedHashMap<String, String>> getServerConfig = Memoizer.memoize(this::_getServerConfig);
 
     /**
      * Tell if the server can be controlled by the proxy
      * @param serverInfo Target
      * @return The server can be controlled by the proxy
      */
-    public boolean canBeControlled(ServerInfo serverInfo) {
-        return this.getServerConfig(serverInfo) != null;
+    private boolean _canBeControlled(ServerInfo serverInfo) {
+        return this.getServerConfig.apply(serverInfo.getSocketAddress()) != null;
     }
+    public Function<ServerInfo, Boolean> canBeControlled = Memoizer.memoize(this::_canBeControlled);
 
     /**
      * Starts the given server
@@ -123,7 +115,7 @@ public class ServerController {
         }
 
         SocketAddress address = serverInfo.getSocketAddress();
-        LinkedHashMap<String, String> server = getServerConfig(address);
+        LinkedHashMap<String, String> server = this.getServerConfig.apply(address);
 
         String command = server.get("command");
 
@@ -135,7 +127,7 @@ public class ServerController {
             // Ping server until it is started
             ProxyServer.getInstance().getScheduler().runAsync(Main.plugin, () -> {
                 try {
-                    Ping ping = new Ping(serverInfo);
+                    new Ping(serverInfo);
                 } catch (StackOverflowError e) {
                     System.out.println("Server took too much time to start, stackoverflow error!");
                 }
@@ -154,7 +146,7 @@ public class ServerController {
      * Create a Runnable to close it a minute later
      * @param serverInfo Target
      */
-    public void stopServer(ServerInfo serverInfo) {
+    public void requestServerStop(ServerInfo serverInfo) {
         // Check if players are on server
         int players = serverInfo.getPlayers().size();
         if (players > 0) return;
@@ -166,6 +158,10 @@ public class ServerController {
         this.createStopTask(serverInfo);
     }
 
+    /**
+     * Remove the stop task for a given server
+     * @param serverInfo Target
+     */
     public void clearStopTask(ServerInfo serverInfo) {
         SocketAddress address = serverInfo.getSocketAddress();
 
@@ -202,13 +198,5 @@ public class ServerController {
 
     public HashMap<SocketAddress, ProxiedPlayer> getStartedBy() {
         return this.startedBy;
-    }
-
-    public HashMap<SocketAddress, ScheduledTask> getStopTasks() {
-        return stopTasks;
-    }
-
-    public int getStopDelay() {
-        return stopDelay;
     }
 }

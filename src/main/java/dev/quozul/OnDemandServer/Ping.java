@@ -4,7 +4,7 @@ import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 
 public class Ping {
-    private ServerInfo serverInfo;
+    private final ServerInfo serverInfo;
     public long start, end;
 
     Ping(ServerInfo serverInfo) throws StackOverflowError {
