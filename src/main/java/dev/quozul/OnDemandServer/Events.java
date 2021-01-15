@@ -67,6 +67,8 @@ public class Events implements Listener {
 
             e.getRequest().setRetry(false);
             e.setCancelled(true);
+        } else {
+            System.out.println("Plugin is not handling connection.");
         }
     }
 

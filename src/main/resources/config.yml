@@ -22,4 +22,25 @@ servers:
   # This is an example for a server hosted on the same Windows machine under the port 25564
   - address: '/127.0.0.1:25564'
     command: 'cmd /k cd "C:\Servers\test" && start.bat'
-  # TODO: Example on Linux to a distant server
+    # The start.bat file:
+
+    # java -jar -Xmx8G paper.jar nogui
+
+  # Second example on Windows
+  - address: '/127.0.0.1:25563'
+    command: '"C:\Servers\test\start.bat"'
+    # The start.bat file:
+
+    # cd "%~dp0" && java -Xmx8G -jar -DIReallyKnowWhatIAmDoingISwear paper.jar nogui
+
+  # Example on Linux
+  - address: 'localhost/127.0.0.1:25562'
+    command: 'sh /Servers/test/start.sh' # The path must be an absolute path
+
+    # The script.sh must contain a cd command to the location of the server
+    # Shell script example:
+
+    # cd /Servers/test/
+    # java -Xmx8G -jar -DIReallyKnowWhatIAmDoingISwear paper.jar nogui
+
+  # TODO: Example on distant server
