@@ -20,5 +20,18 @@ You have a dedicated server or a VPS and you want to run multiple Minecraft serv
 - Not tested on distant servers.
 
 ## TODO
-- Fix orphan servers.
+- Fix orphan servers. (not happening on Linux)
 - Test distant servers.
+- Add load balancing feature.
+- Commands:
+    - create a server on-the-fly and add it to config file.
+        - set an automatic deletion.
+        - Permissions:
+            - maximum servers per player.
+            - maximum auto deletion delay per player.
+            - maximum ram per server per player.
+    - remove a server from config file (only the servers created on-the-fly).
+    - start a server.
+    - stop a running server.
+- Web interface to manage servers (plugins, worlds, start/stop, create, monitor, ...).
+- Handle when a player disconnects after trying to join a server.

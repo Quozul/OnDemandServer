@@ -100,6 +100,7 @@ public class Events implements Listener {
         ProxiedPlayer player = serverController.getStartedBy().get(address);
 
         System.out.println("Server " + address.toString() + " requested by " + player.getName() + " started in " + time / 1000 + "s");
+        player.sendMessage(new TextComponent(String.format("Server started in %.2fs.", time / 1000.)));
 
         // Move player to started server
         if (player.isConnected()) {
