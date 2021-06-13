@@ -41,8 +41,8 @@ public class ServerController {
     private final HashMap<SocketAddress, Process> processes;
     private final HashMap<SocketAddress, ScheduledTask> stopTasks;
 
-    private final int stopDelay;
-    private final int maxServers;
+    private int stopDelay;
+    private int maxServers;
 
     ServerController() {
         this.stopDelay = Main.configuration.getInt("stop_delay");
@@ -51,6 +51,14 @@ public class ServerController {
         this.processes = new HashMap<>();
         this.startedBy = new HashMap<>();
         this.stopTasks = new HashMap<>();
+    }
+
+    /**
+     * Reload the configuration variables
+     */
+    public void reloadConfig() {
+        this.stopDelay = Main.configuration.getInt("stop_delay");
+        this.maxServers = Main.configuration.getInt("max_servers");
     }
 
     /**
@@ -123,6 +131,23 @@ public class ServerController {
             Process p = Runtime.getRuntime().exec(command);
             this.processes.put(address, p);
             this.startedBy.put(address, player);
+
+            // Debug
+            /*ProxyServer.getInstance().getScheduler().runAsync(Main.plugin, () -> {
+                // Debug
+                try {
+                    String s;
+                    BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+                    // read the output from the command
+                    while ((s = stdInput.readLine()) != null) {
+                        System.out.println(s);
+                    }
+                    System.out.println("Log ended");
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            });*/
 
             // Ping server until it is started
             ProxyServer.getInstance().getScheduler().runAsync(Main.plugin, () -> {

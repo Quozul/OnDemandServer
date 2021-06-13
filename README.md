@@ -16,11 +16,11 @@ You have a dedicated server or a VPS and you want to run multiple Minecraft serv
 - Stops the servers if no players are on after a given delay.
 
 ## Defects
-- If the proxy crashes, the Minecraft servers are still running but can't be controlled by the user or the proxy.
+- If the proxy crashes, the Minecraft servers are still running but can't be controlled by the user nor the proxy.
 - Not tested on distant servers.
 
 ## TODO
-- Fix orphan servers. (not happening on Linux)
+- Fix orphan servers. (Windows only)
 - Test distant servers.
 - Add load balancing feature.
 - Commands:

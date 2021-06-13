@@ -53,6 +53,7 @@ public class Stop implements Runnable {
         OutputStream stdin = p.getOutputStream();
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stdin));
 
+        // TODO: Put server to sleep instead of stopping it
         writer.write(Main.configuration.getString("stop_command"));
         writer.flush();
         writer.close();

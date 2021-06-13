@@ -20,6 +20,7 @@ public class Ping {
             if (serverPing != null) {
                 ProxyServer.getInstance().getPluginManager().callEvent(new ServerStartedEvent(serverInfo, this));
             } else {
+                // TODO: Use interval instead of recursion
                 this.ping();
             }
         });

@@ -23,6 +23,7 @@ public class Main extends Plugin {
         if (!getDataFolder().exists())
             getDataFolder().mkdir();
 
+        // Read configuration
         File file = new File(getDataFolder(), "config.yml");
 
         if (!file.exists()) {
@@ -44,10 +45,14 @@ public class Main extends Plugin {
         Main.serverController = new ServerController();
 
         // Register events
-        getProxy().getPluginManager().registerListener(this, new Events());
+        getProxy().getPluginManager().registerListener(this, new Events(this));
 
+        // TODO: Add permissions on commands
         // Register commands
         getProxy().getPluginManager().registerCommand(this, new ServerReport());
+
+        // Reload config command
+        getProxy().getPluginManager().registerCommand(this, new ReloadConfig());
     }
 
     // TODO: Close Minecraft server on Proxy stop
