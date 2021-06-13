@@ -4,6 +4,9 @@ redirect_message: 'Server is starting, you''ll be automatically redirected.'
 # Message to send when a non-connected player tries to connect to a non-started server
 kick_message: 'Server is starting, retry in a few seconds.'
 
+# Message displayed when a player wants to start a server, printing estimated time remaining, must include %f
+estimated_startup: 'Estimated time for startup %.2fs.'
+
 # Delay before the servers stops in minutes
 stop_delay: 1
 

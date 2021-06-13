@@ -5,10 +5,11 @@ import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.scheduler.ScheduledTask;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.SocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,6 +41,7 @@ public class ServerController {
     // TODO: Do something with the time stored
     private final HashMap<SocketAddress, Process> processes;
     private final HashMap<SocketAddress, ScheduledTask> stopTasks;
+    private HashMap<SocketAddress, List<Long>> startingTime;
 
     private int stopDelay;
     private int maxServers;
@@ -51,6 +53,57 @@ public class ServerController {
         this.processes = new HashMap<>();
         this.startedBy = new HashMap<>();
         this.stopTasks = new HashMap<>();
+
+        File file = new File(Main.plugin.getDataFolder(), "startingTime.ser");
+
+        try {
+            ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file));
+            this.startingTime = (HashMap<SocketAddress, List<Long>>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            this.startingTime = new HashMap<>();
+            e.printStackTrace();
+        }
+    }
+
+    public void addStartingTime(ServerInfo serverInfo, long time) {
+        SocketAddress address = serverInfo.getSocketAddress();
+        List<Long> times;
+
+        if (this.startingTime.containsKey(address)) {
+            times = this.startingTime.get(address);
+        } else {
+            times = new ArrayList<>();
+        }
+
+        times.add(time);
+
+        this.startingTime.put(address, times);
+
+        File file = new File(Main.plugin.getDataFolder(), "startingTime.ser");
+
+        try {
+            ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file));
+            oos.writeObject(this.startingTime);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public long getAverageStartingTime(ServerInfo serverInfo) {
+        SocketAddress address = serverInfo.getSocketAddress();
+
+        if (this.startingTime.containsKey(address)) {
+            List<Long> times = this.startingTime.get(address);
+
+            long average = 0;
+            for (long time : times) {
+                average += time;
+            }
+
+            return average / times.size();
+        } else {
+            return 0;
+        }
     }
 
     /**
@@ -203,13 +256,22 @@ public class ServerController {
      * @param serverInfo Target
      */
     public void createStopTask(ServerInfo serverInfo) {
+        createStopTask(serverInfo, this.stopDelay);
+    }
+
+    /**
+     * Remove the previous task and create a new one to stop the server after the given delay
+     * @param serverInfo Target
+     * @param delay Delay in minutes to stop the server
+     */
+    public void createStopTask(ServerInfo serverInfo, long delay) {
         SocketAddress address = serverInfo.getSocketAddress();
 
         // Stop after delay
         if (!this.stopTasks.containsKey(address)) {
             System.out.println("Stopping server in " + this.stopDelay + " minute");
             ScheduledTask task = ProxyServer.getInstance().getScheduler()
-                    .schedule(Main.plugin, new Stop(serverInfo), this.stopDelay, TimeUnit.MINUTES);
+                    .schedule(Main.plugin, new Stop(serverInfo), delay, TimeUnit.MINUTES);
 
             this.stopTasks.put(address, task);
 

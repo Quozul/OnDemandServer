@@ -1,4 +1,4 @@
-package dev.quozul.OnDemandServer;
+package dev.quozul.OnDemandServer.commands;
 
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;

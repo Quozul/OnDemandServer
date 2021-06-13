@@ -1,5 +1,7 @@
 package dev.quozul.OnDemandServer;
 
+import dev.quozul.OnDemandServer.commands.ReloadConfig;
+import dev.quozul.OnDemandServer.commands.ServerReport;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.config.Configuration;
 import net.md_5.bungee.config.ConfigurationProvider;
@@ -56,9 +58,9 @@ public class Main extends Plugin {
     }
 
     // TODO: Close Minecraft server on Proxy stop
-    /*@Override
+    @Override
     public void onDisable() {
-        Events.processes.forEach((port, p) -> {
+        /*Events.processes.forEach((port, p) -> {
             OutputStream stdin = p.getOutputStream();
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stdin));
             InputStream stdout = p.getInputStream();
@@ -75,6 +77,6 @@ public class Main extends Plugin {
             while (scanner.hasNextLine()) {
                 System.out.println(scanner.nextLine());
             }
-        });
-    }*/
+        });*/
+    }
 }

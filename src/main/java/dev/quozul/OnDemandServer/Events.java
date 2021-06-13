@@ -1,14 +1,17 @@
 package dev.quozul.OnDemandServer;
 
+import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.event.*;
 import net.md_5.bungee.api.plugin.Listener;
+import net.md_5.bungee.api.scheduler.ScheduledTask;
 import net.md_5.bungee.event.EventHandler;
 
 
 import java.net.SocketAddress;
+import java.util.HashMap;
 
 import static dev.quozul.OnDemandServer.Main.serverController;
 
@@ -18,9 +21,11 @@ public class Events implements Listener {
     // TODO: Display time remaining for server to start in MOTD per player
 
     private final Main plugin;
+    private final HashMap<ProxiedPlayer, ScheduledTask> tasks;
 
     Events(Main pl) {
         this.plugin = pl;
+        this.tasks = new HashMap<>();
     }
 
     @EventHandler
@@ -40,12 +45,15 @@ public class Events implements Listener {
                 case 0:
                     System.out.println("Starting server " + target.getName() + "...");
 
-                    // TODO: Display an estimated time for the server's startup time
-
                     // If player is already connected
                     if (e.getPlayer().getServer() != null) {
+                        // Display an estimated time for the server's startup time
                         message.setText(Main.configuration.getString("redirect_message"));
                         e.getPlayer().sendMessage(message);
+
+                        long time = serverController.getAverageStartingTime(target);
+                        TextComponent text = new TextComponent(String.format(Main.configuration.getString("estimated_startup"), time / 1000.));
+                        e.getPlayer().sendMessage(ChatMessageType.CHAT, text);
                     } else {
                         // If plays is connecting, kick player
                         message.setText(Main.configuration.getString("kick_message"));
@@ -112,6 +120,7 @@ public class Events implements Listener {
         ProxiedPlayer player = serverController.getStartedBy().get(address);
 
         // TODO: Save time took for the server to start
+        serverController.addStartingTime(serverInfo, time);
 
         System.out.println("Server " + address.toString() + " requested by " + player.getName() + " started in " + time / 1000 + "s");
         player.sendMessage(new TextComponent(String.format("Server started in %.2fs.", time / 1000.)));
