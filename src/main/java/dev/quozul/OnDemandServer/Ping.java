@@ -3,17 +3,40 @@ package dev.quozul.OnDemandServer;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 
-public class Ping {
-    private final ServerInfo serverInfo;
-    public long start, end;
+import java.util.concurrent.TimeUnit;
 
-    Ping(ServerInfo serverInfo) throws StackOverflowError {
+public class Ping {
+    private final static long MAX_STARTUP_TIME = 60000; // Time during which the server is pinged in ms
+    private final static long PING_INTERVAL = 100;
+
+    private final ServerInfo serverInfo;
+    private final long timeout;
+    private final long start;
+    private long end;
+
+    /**
+     * @deprecated Give a timeout
+     * @param serverInfo Target server
+     */
+    Ping(ServerInfo serverInfo) {
+        this(serverInfo, MAX_STARTUP_TIME);
+    }
+
+    Ping(ServerInfo serverInfo, long timeout) {
+        this.timeout = timeout;
         this.serverInfo = serverInfo;
-        this.start = System.currentTimeMillis();
+        this.end = this.start = System.currentTimeMillis();
         ping();
     }
 
-    private void ping() throws StackOverflowError {
+    private void ping() {
+        // Ping timeout
+        if (this.end - this.start > timeout) {
+            System.out.println("Maximum ping tries reached, aborting.");
+            ProxyServer.getInstance().getPluginManager().callEvent(new ServerStartFailEvent(serverInfo, this));
+            return;
+        }
+
         this.serverInfo.ping((serverPing, throwable) -> {
             this.end = System.currentTimeMillis();
 
@@ -21,7 +44,8 @@ public class Ping {
                 ProxyServer.getInstance().getPluginManager().callEvent(new ServerStartedEvent(serverInfo, this));
             } else {
                 // TODO: Use interval instead of recursion
-                this.ping();
+                // Reduce ping amount
+                Main.plugin.getProxy().getScheduler().schedule(Main.plugin, this::ping, PING_INTERVAL, TimeUnit.MILLISECONDS);
             }
         });
     }
@@ -30,7 +54,7 @@ public class Ping {
      *
      * @return The time in millis that the server took
      */
-    long getTimeTook() {
+    public long getTimeTook() {
         return this.end - this.start;
     }
 }

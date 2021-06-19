@@ -39,12 +39,10 @@ public class Events implements Listener {
 
         if (serverController.isServerStarted(target)) {
             System.out.println("Connecting to " + target.getName() + "...");
-            // TODO: If the server is not responding (ie. it crashed), fix it (remove it from list and restart it)
 
-            System.out.println(e.getReason());
+            // If the server is not responding (ie. it crashed), fix it (remove it from list and restart it)
+            // TODO: Handle JOIN_PROXY
             if (e.getReason() == ServerConnectEvent.Reason.COMMAND) {
-                System.out.println("Cancelling");
-
                 e.setCancelled(true);
 
                 ServerConnectRequest.Builder builder = ServerConnectRequest.builder()
@@ -58,18 +56,19 @@ public class Events implements Listener {
                                 if (result == ServerConnectRequest.Result.FAIL) {
                                     boolean serverRemoved = serverController.safelyRemoveFromList(e.getTarget());
                                     if (serverRemoved) {
-                                        e.getPlayer().connect(e.getTarget());
+                                        e.getPlayer().connect(e.getTarget()); // Reconnecting to start the server
                                     }
                                 }
                             }
                         });
                 e.getPlayer().connect(builder.build());
-            } else {
-                System.out.println("Joining");
             }
 
         } else if (serverController.canBeControlled.apply(target)) {
-            char isStarting = serverController.startServer(target, e.getPlayer());
+            long time = serverController.getAverageStartingTime(target);
+
+            // Timeout is 2 times the expected time to start
+            char isStarting = serverController.startServer(target, e.getPlayer(), time * 2);
             TextComponent message = new TextComponent();
 
             switch (isStarting) {
@@ -82,7 +81,6 @@ public class Events implements Listener {
                         message.setText(Main.configuration.getString("redirect_message"));
                         e.getPlayer().sendMessage(message);
 
-                        long time = serverController.getAverageStartingTime(target);
                         TextComponent text = new TextComponent(String.format(Main.configuration.getString("estimated_startup"), time / 1000.));
                         e.getPlayer().sendMessage(ChatMessageType.CHAT, text);
                     } else {
@@ -150,9 +148,10 @@ public class Events implements Listener {
         ServerInfo serverInfo = e.getServerInfo();
         SocketAddress address = serverInfo.getSocketAddress();
         long time = e.getPing().getTimeTook();
+        // TODO: Handle when several players try to start the same server
         ProxiedPlayer player = serverController.getStartedBy().get(address);
 
-        // TODO: Save time took for the server to start
+        // Save time took for the server to start
         serverController.addStartingTime(serverInfo, time);
 
         System.out.println("Server " + address.toString() + " requested by " + player.getName() + " started in " + time / 1000 + "s");
@@ -165,5 +164,18 @@ public class Events implements Listener {
         }
 
         serverController.createStopTask(serverInfo);
+    }
+
+    @EventHandler
+    public void onServerStartFailed(ServerStartFailEvent e) {
+        ServerInfo serverInfo = e.getServerInfo();
+        SocketAddress address = serverInfo.getSocketAddress();
+        long time = e.getPing().getTimeTook();
+        ProxiedPlayer player = serverController.getStartedBy().get(address);
+
+        System.out.println("Server " + address.toString() + " requested by " + player.getName() + " failed in " + time / 1000 + "s");
+        player.sendMessage(new TextComponent(Main.configuration.getString("start_failed")));
+
+        serverController.safelyRemoveFromList(serverInfo);
     }
 }

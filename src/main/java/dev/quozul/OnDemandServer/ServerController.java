@@ -98,7 +98,7 @@ public class ServerController {
     /**
      * Get an average of all starting times
      * @param serverInfo Target server
-     * @return Starting time average
+     * @return Starting time average, or -1 if no time
      */
     public long getAverageStartingTime(ServerInfo serverInfo) {
         SocketAddress address = serverInfo.getSocketAddress();
@@ -111,7 +111,7 @@ public class ServerController {
 
             return average / times.size();
         } else {
-            return 0;
+            return -1;
         }
     }
 
@@ -204,7 +204,7 @@ public class ServerController {
      * @param serverInfo Target
      * @param player Move the given player once the server is started
      */
-    public char startServer(ServerInfo serverInfo, ProxiedPlayer player) {
+    public char startServer(ServerInfo serverInfo, ProxiedPlayer player, long timeout) {
         if (this.maxServers > 0 && this.maxServers <= this.processes.size()) {
             return 1;
         }
@@ -238,10 +238,10 @@ public class ServerController {
 
             // Ping server until it is started
             ProxyServer.getInstance().getScheduler().runAsync(Main.plugin, () -> {
-                try {
+                if (timeout > 0) {
+                    new Ping(serverInfo, timeout);
+                } else {
                     new Ping(serverInfo);
-                } catch (StackOverflowError e) {
-                    System.out.println("Server took too much time to start, stackoverflow error!");
                 }
             });
 

@@ -13,6 +13,9 @@ startup_time: 'Server started in %.2fs. Redirecting...'
 # Message displayed when a player tries to execute a command he's not allowed to
 no_permission: 'You do not have permission to use this command.'
 
+# Message displayed when a server fail to start
+start_failed: 'Sorry, the server you requested could not be started.'
+
 # Delay before the servers stops in minutes
 stop_delay: 1
 
