@@ -9,42 +9,45 @@ import static dev.quozul.OnDemandServer.Main.serverController;
 
 
 public class Stop implements Runnable {
-    private final ServerInfo serverInfo;
-    private final SocketAddress address;
+    private final ServerOnDemand server;
 
-    Stop(ServerInfo serverInfo) {
-        this.serverInfo = serverInfo;
-        this.address = serverInfo.getSocketAddress();
+    Stop(ServerOnDemand server) {
+        this.server = server;
     }
 
     @Override
     public void run() {
         // Ensure no player are on the server
-        int players = this.serverInfo.getPlayers().size();
+        int players = server.getServerInfo().getPlayers().size();
         if (players > 0) {
-            System.out.println("Players on server, not stopping it");
+            System.out.println("Players on " + server.getName() + ", not stopping it");
             return;
         }
 
-        Process process = serverController.getProcesses().get(this.address);
+        Process process = server.getProcess();
         if (process == null) return;
 
         // Remove process if not alive
         if (!process.isAlive()) {
             process.destroy();
-            serverController.getProcesses().remove(this.address);
-            System.out.println("Server not found, removing it from list");
+            server.removeProcess();
+            System.out.println("Process not found");
             return;
         }
+
+        server.setStatus(ServerStatus.STOPPING);
 
         // Stop server then remove process
         try {
             System.out.println("Stopping server...");
+
             stopServer(process);
             process.waitFor();
-            System.out.println("Server stopped!");
             process.destroy();
-            serverController.getProcesses().remove(this.address);
+            server.removeProcess();
+
+            System.out.println("Server " + server.getName() + " stopped!");
+            server.setStatus(ServerStatus.STOPPED);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
@@ -60,7 +63,7 @@ public class Stop implements Runnable {
         writer.close();
 
         // Debug
-        try {
+        /*try {
             String s;
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
 
@@ -70,6 +73,6 @@ public class Stop implements Runnable {
             }
         } catch (IOException ioException) {
             ioException.printStackTrace();
-        }
+        }*/
     }
 }

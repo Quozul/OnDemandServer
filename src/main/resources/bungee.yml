@@ -1,4 +1,4 @@
 name: OnDemandServer
 main: dev.quozul.OnDemandServer.Main
-version: "1.0"
+version: "1.1"
 author: Quozul

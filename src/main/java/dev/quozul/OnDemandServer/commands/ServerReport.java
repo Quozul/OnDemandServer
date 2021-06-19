@@ -35,7 +35,7 @@ public class ServerReport extends Command {
 
             servers.forEach((name, serverInfo) -> {
                 boolean isControlled = serverController.isControlledByProxy(serverInfo);
-                boolean canBeControlled = serverController.canBeControlled.apply(serverInfo);
+                boolean canBeControlled = serverController.canBeControlled(serverInfo);
                 boolean isStarted = serverController.isServerStarted(serverInfo);
 
                 boolean isOrphan = isStarted && canBeControlled && !isControlled;

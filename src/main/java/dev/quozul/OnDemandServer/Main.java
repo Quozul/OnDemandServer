@@ -47,7 +47,7 @@ public class Main extends Plugin {
         Main.serverController = new ServerController();
 
         // Register events
-        getProxy().getPluginManager().registerListener(this, new Events(this));
+        getProxy().getPluginManager().registerListener(this, new Events());
 
         // Register commands
         getProxy().getPluginManager().registerCommand(this, new ServerReport());
