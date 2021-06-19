@@ -1,9 +1,12 @@
 package dev.quozul.OnDemandServer;
 
+import net.md_5.bungee.api.Callback;
 import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.ServerConnectRequest;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
+import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.api.event.*;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.api.scheduler.ScheduledTask;
@@ -11,6 +14,7 @@ import net.md_5.bungee.event.EventHandler;
 
 
 import java.net.SocketAddress;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import static dev.quozul.OnDemandServer.Main.serverController;
@@ -35,8 +39,35 @@ public class Events implements Listener {
 
         if (serverController.isServerStarted(target)) {
             System.out.println("Connecting to " + target.getName() + "...");
-            e.getRequest().setRetry(false);
             // TODO: If the server is not responding (ie. it crashed), fix it (remove it from list and restart it)
+
+            System.out.println(e.getReason());
+            if (e.getReason() == ServerConnectEvent.Reason.COMMAND) {
+                System.out.println("Cancelling");
+
+                e.setCancelled(true);
+
+                ServerConnectRequest.Builder builder = ServerConnectRequest.builder()
+                        .retry(false)
+                        .reason(ServerConnectEvent.Reason.PLUGIN)
+                        .target(e.getTarget())
+                        .connectTimeout(e.getRequest().getConnectTimeout())
+                        .callback(new Callback<ServerConnectRequest.Result>() {
+                            @Override
+                            public void done(ServerConnectRequest.Result result, Throwable error) {
+                                if (result == ServerConnectRequest.Result.FAIL) {
+                                    boolean serverRemoved = serverController.safelyRemoveFromList(e.getTarget());
+                                    if (serverRemoved) {
+                                        e.getPlayer().connect(e.getTarget());
+                                    }
+                                }
+                            }
+                        });
+                e.getPlayer().connect(builder.build());
+            } else {
+                System.out.println("Joining");
+            }
+
         } else if (serverController.canBeControlled.apply(target)) {
             char isStarting = serverController.startServer(target, e.getPlayer());
             TextComponent message = new TextComponent();
@@ -105,10 +136,12 @@ public class Events implements Listener {
 
     @EventHandler
     public void onServerDisconnect(ServerDisconnectEvent e) {
+        ServerInfo target = e.getTarget();
+
         // If server was started by the proxy
-        if (serverController.canBeControlled.apply(e.getTarget())) {
+        if (serverController.canBeControlled.apply(target)) {
             // TODO: Check if server is still responding, if not, remove it from list (ie. admin stopped the server)
-            serverController.requestServerStop(e.getTarget());
+            serverController.requestServerStop(target);
         }
     }
 
@@ -123,7 +156,7 @@ public class Events implements Listener {
         serverController.addStartingTime(serverInfo, time);
 
         System.out.println("Server " + address.toString() + " requested by " + player.getName() + " started in " + time / 1000 + "s");
-        player.sendMessage(new TextComponent(String.format("Server started in %.2fs.", time / 1000.)));
+        player.sendMessage(new TextComponent(String.format(Main.configuration.getString("startup_time"), time / 1000.)));
 
         // Move player to started server
         // TODO: Handle when player is no longer connected (ie. stop the server)

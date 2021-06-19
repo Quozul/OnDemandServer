@@ -19,6 +19,7 @@ public class Stop implements Runnable {
 
     @Override
     public void run() {
+        // Ensure no player are on the server
         int players = this.serverInfo.getPlayers().size();
         if (players > 0) {
             System.out.println("Players on server, not stopping it");

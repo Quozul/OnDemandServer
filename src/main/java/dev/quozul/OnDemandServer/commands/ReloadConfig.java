@@ -2,6 +2,7 @@ package dev.quozul.OnDemandServer.commands;
 
 import dev.quozul.OnDemandServer.Main;
 import net.md_5.bungee.api.CommandSender;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Command;
 import net.md_5.bungee.config.ConfigurationProvider;
@@ -19,17 +20,23 @@ public class ReloadConfig extends Command {
     @Override
     public void execute(CommandSender sender, String[] strings) {
         if ((sender instanceof ProxiedPlayer)) {
-            // Load configuration
-            try {
-                Main.configuration = ConfigurationProvider.getProvider(YamlConfiguration.class)
-                        .load(new File(Main.plugin.getDataFolder(), "config.yml"));
-
-                Main.serverController.reloadConfig();
-
-                System.out.println("Config reloaded!");
-            } catch (IOException e) {
-                e.printStackTrace();
+            ProxiedPlayer p = (ProxiedPlayer) sender;
+            if (!p.hasPermission("ondemandserver.reload")) {
+                p.sendMessage(new TextComponent(Main.configuration.getString("no_permission")));
+                return;
             }
+        }
+
+        // Load configuration
+        try {
+            Main.configuration = ConfigurationProvider.getProvider(YamlConfiguration.class)
+                    .load(new File(Main.plugin.getDataFolder(), "config.yml"));
+
+            Main.serverController.reloadConfig();
+
+            sender.sendMessage(new TextComponent("Config reloaded!"));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

@@ -49,7 +49,6 @@ public class Main extends Plugin {
         // Register events
         getProxy().getPluginManager().registerListener(this, new Events(this));
 
-        // TODO: Add permissions on commands
         // Register commands
         getProxy().getPluginManager().registerCommand(this, new ServerReport());
 

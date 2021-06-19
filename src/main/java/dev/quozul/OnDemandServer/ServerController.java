@@ -18,6 +18,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static dev.quozul.OnDemandServer.Main.serverController;
+
 public class ServerController {
     /**
      * Check if the port is in use or not
@@ -61,10 +63,14 @@ public class ServerController {
             this.startingTime = (HashMap<SocketAddress, List<Long>>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             this.startingTime = new HashMap<>();
-            e.printStackTrace();
         }
     }
 
+    /**
+     * Adds starting time to the history
+     * @param serverInfo Target server
+     * @param time Time took for the target server to start
+     */
     public void addStartingTime(ServerInfo serverInfo, long time) {
         SocketAddress address = serverInfo.getSocketAddress();
         List<Long> times;
@@ -89,6 +95,11 @@ public class ServerController {
         }
     }
 
+    /**
+     * Get an average of all starting times
+     * @param serverInfo Target server
+     * @return Starting time average
+     */
     public long getAverageStartingTime(ServerInfo serverInfo) {
         SocketAddress address = serverInfo.getSocketAddress();
 
@@ -96,9 +107,7 @@ public class ServerController {
             List<Long> times = this.startingTime.get(address);
 
             long average = 0;
-            for (long time : times) {
-                average += time;
-            }
+            for (long time : times) average += time;
 
             return average / times.size();
         } else {
@@ -127,6 +136,31 @@ public class ServerController {
         boolean processRunning = processes.containsKey(address);
 
         return serverRunningOnPort || processRunning;
+    }
+
+    /**
+     * Verify the server is not responding/running and removes it from list
+     * @param serverInfo Target server
+     * @return Server has been removed
+     */
+    public boolean safelyRemoveFromList(ServerInfo serverInfo) {
+        int port = ((InetSocketAddress) serverInfo.getSocketAddress()).getPort();
+        boolean portAvailable = isAvailable(port);
+
+        SocketAddress address = serverInfo.getSocketAddress();
+        boolean processRunning = processes.containsKey(address);
+
+        Process process = serverController.getProcesses().get(address);
+
+        // Remove process if not alive
+        if (process != null && portAvailable && processRunning) {
+            process.destroy();
+            serverController.getProcesses().remove(address);
+            System.out.println("Server not responding, removing it from list");
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -253,6 +287,7 @@ public class ServerController {
 
     /**
      * Remove the previous task and create a new one to stop the server after the delay from config
+     * @deprecated Use createStopTask with explicit delay
      * @param serverInfo Target
      */
     public void createStopTask(ServerInfo serverInfo) {

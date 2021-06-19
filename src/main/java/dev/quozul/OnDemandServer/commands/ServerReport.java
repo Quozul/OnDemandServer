@@ -1,5 +1,6 @@
 package dev.quozul.OnDemandServer.commands;
 
+import dev.quozul.OnDemandServer.Main;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -22,6 +23,10 @@ public class ServerReport extends Command {
     public void execute(CommandSender sender, String[] strings) {
         if ((sender instanceof ProxiedPlayer)) {
             ProxiedPlayer p = (ProxiedPlayer)sender;
+            if (!p.hasPermission("ondemandserver.report")) {
+                p.sendMessage(new TextComponent(Main.configuration.getString("no_permission")));
+                return;
+            }
 
             StringBuilder builder = new StringBuilder();
             Map<String, ServerInfo> servers = ProxyServer.getInstance().getServers();
