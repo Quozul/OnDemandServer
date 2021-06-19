@@ -6,7 +6,6 @@ import net.md_5.bungee.config.Configuration;
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.SocketAddress;
 import java.util.*;
 
 public class ServerController {
@@ -25,10 +24,6 @@ public class ServerController {
         return portFree;
     }
 
-    // Store which player requested the server to start
-    // TODO: Display the remaining time for the starting server to start
-    private HashMap<SocketAddress, List<Long>> startingTime;
-
     private final HashMap<ServerInfo, ServerOnDemand> servers;
 
     public int stopDelay;
@@ -39,15 +34,16 @@ public class ServerController {
         this.maxServers = Main.configuration.getInt("max_servers");
 
         File file = new File(Main.plugin.getDataFolder(), "startingTime.ser");
+        HashMap<String, List<Long>> startingTime;
 
         try {
             ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file));
-            this.startingTime = (HashMap<SocketAddress, List<Long>>) ois.readObject();
+            startingTime = (HashMap<String, List<Long>>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
-            this.startingTime = new HashMap<>();
+            startingTime = new HashMap<>();
         }
 
-        // Load server informations
+        // Load server information
         Map<String, ServerInfo> servers = Main.plugin.getProxy().getServers();
         Configuration serverConfig = Main.configuration.getSection("servers");
         this.servers = new HashMap<>();
@@ -59,6 +55,11 @@ public class ServerController {
 
             ServerOnDemand server = new ServerOnDemand(name, command, serverInfo);
             this.servers.put(serverInfo, server);
+
+            // Load starting times
+            if (startingTime.containsKey(name)) {
+                server.setStartingTimes(startingTime.get(name));
+            }
 
             if (isServerStarted(serverInfo)) {
                 server.setStatus(ServerStatus.STANDALONE);
@@ -84,11 +85,17 @@ public class ServerController {
      * Adds starting time to the history
      */
     public void saveStartingTimes() {
+        HashMap<String, List<Long>> startingTime = new HashMap<>();
+
+        for (Map.Entry<ServerInfo, ServerOnDemand> entry : servers.entrySet()) {
+            startingTime.put(entry.getValue().getName(), entry.getValue().getStartingTimes());
+        }
+
         File file = new File(Main.plugin.getDataFolder(), "startingTime.ser");
 
         try {
             ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file));
-            oos.writeObject(this.startingTime);
+            oos.writeObject(startingTime);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -134,5 +141,9 @@ public class ServerController {
      */
     public boolean isControlledByProxy(ServerInfo serverInfo) {
         return this.getServer(serverInfo).getStatus() == ServerStatus.RUNNING;
+    }
+
+    public HashMap<ServerInfo, ServerOnDemand> getServers() {
+        return this.servers;
     }
 }

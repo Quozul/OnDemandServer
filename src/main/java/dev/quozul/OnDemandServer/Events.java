@@ -152,6 +152,8 @@ public class Events implements Listener {
         }
 
         e.getServer().createStopTask();
+
+        serverController.saveStartingTimes();
     }
 
     @EventHandler

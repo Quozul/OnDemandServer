@@ -23,12 +23,12 @@ public class ServerOnDemand {
     private final String command;
     private final ServerInfo serverInfo;
     private final SocketAddress address;
-    private final List<Long> startingTimes;
 
     private Process process;
     private ServerStatus status;
     private ScheduledTask stopTask;
     private ProxiedPlayer requester;
+    private List<Long> startingTimes;
 
     public ServerOnDemand(String name, String command, ServerInfo serverInfo) {
         this.name = name;
@@ -210,5 +210,13 @@ public class ServerOnDemand {
 
     public SocketAddress getAddress() {
         return address;
+    }
+
+    public void setStartingTimes(List<Long> startingTimes) {
+        this.startingTimes = startingTimes;
+    }
+
+    public List<Long> getStartingTimes() {
+        return this.startingTimes;
     }
 }

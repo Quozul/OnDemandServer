@@ -1,12 +1,6 @@
 package dev.quozul.OnDemandServer;
 
-import net.md_5.bungee.api.config.ServerInfo;
-
 import java.io.*;
-import java.net.SocketAddress;
-
-import static dev.quozul.OnDemandServer.Main.serverController;
-
 
 public class Stop implements Runnable {
     private final ServerOnDemand server;
@@ -44,12 +38,12 @@ public class Stop implements Runnable {
             stopServer(process);
             process.waitFor();
             process.destroy();
-            server.removeProcess();
-
-            System.out.println("Server " + server.getName() + " stopped!");
-            server.setStatus(ServerStatus.STOPPED);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
+        } finally {
+            server.removeProcess();
+            System.out.println("Server " + server.getName() + " stopped!");
+            server.setStatus(ServerStatus.STOPPED);
         }
     }
 
@@ -63,16 +57,16 @@ public class Stop implements Runnable {
         writer.close();
 
         // Debug
-        /*try {
+        try {
             String s;
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
 
             // read the output from the command
             while ((s = stdInput.readLine()) != null) {
-                System.out.println(s);
+                //System.out.println(s);
             }
         } catch (IOException ioException) {
             ioException.printStackTrace();
-        }*/
+        }
     }
 }
