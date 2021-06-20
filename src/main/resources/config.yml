@@ -10,6 +10,9 @@ stop_command: "stop\n"  # For the \n to work, must be between quotes ""
 # Set to <= 0 for no limit
 max_servers: 1
 
+# Enable HTTP server to manage the servers
+# Set to <= 0 to disable
+http_port: -1
 
 # Syntax: [server name]: [command to start the server]
 servers:

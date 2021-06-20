@@ -16,13 +16,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class HttpApi {
-    public HttpApi() throws IOException {
-        HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
+    public HttpApi(int port) throws IOException {
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
         server.createContext("/status", new Status());
         server.createContext("/start", new StartServer());
         server.createContext("/stop", new StopServer());
         server.setExecutor(null); // creates a default executor
         server.start();
+        System.out.println("HTTP server started, access it using: http://localhost:" + port);
     }
 
     static class Status implements HttpHandler {

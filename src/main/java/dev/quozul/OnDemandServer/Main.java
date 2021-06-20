@@ -41,10 +41,13 @@ public class Main extends Plugin {
         // Reload config command
         getProxy().getPluginManager().registerCommand(this, new ReloadConfig());
 
-        try {
-            new HttpApi();
-        } catch (IOException e) {
-            e.printStackTrace();
+        int port = Main.config.getInt("http_port");
+        if (port > 0) {
+            try {
+                new HttpApi(port);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
