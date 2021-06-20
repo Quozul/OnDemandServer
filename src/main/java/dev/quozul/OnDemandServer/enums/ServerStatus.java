@@ -2,7 +2,7 @@ package dev.quozul.OnDemandServer.enums;
 
 public enum ServerStatus {
     STARTING,
-    RUNNING,
+    STARTED,
     EMPTY,
     STOPPING,
     STOPPED,

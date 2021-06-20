@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import dev.quozul.OnDemandServer.enums.ServerStatus;
 import net.md_5.bungee.api.config.ServerInfo;
 
 import java.io.IOException;
@@ -18,6 +19,8 @@ public class HttpApi {
     public HttpApi() throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
         server.createContext("/status", new Status());
+        server.createContext("/start", new StartServer());
+        server.createContext("/stop", new StopServer());
         server.setExecutor(null); // creates a default executor
         server.start();
     }
@@ -38,7 +41,8 @@ public class HttpApi {
 
             jsonObject.addProperty("started_since", server.getLastStartup());
             jsonObject.addProperty("closed_since", server.getLastStop());
-            jsonObject.addProperty("motd", server.getServerInfo().getMotd());
+
+            //jsonObject.addProperty("motd", server.getServerInfo().getMotd()); // FIXME: Does not work with line breaks
             jsonObject.addProperty("players", server.getServerInfo().getPlayers().size());
             jsonObject.addProperty("address", server.getAddress().toString());
 
@@ -49,7 +53,7 @@ public class HttpApi {
         public void handle(HttpExchange t) throws IOException {
             Matcher matcher = Pattern.compile("/status/([^/]*)").matcher(t.getRequestURI().getPath());
 
-            String response = "";
+            String response;
 
             t.getResponseHeaders().set("Content-Type", "application/json;charset=utf-8");
 
@@ -62,21 +66,81 @@ public class HttpApi {
                 }
 
                 response = jsonObject.toString();
+                t.sendResponseHeaders(200, response.length());
+
+                OutputStream os = t.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
             } else {
                 String serverName = matcher.group(1);
                 ServerOnDemand server = Main.serverController.findServerByName(serverName);
 
                 if (server == null) {
-                    t.sendResponseHeaders(404, 0);
+                    t.sendResponseHeaders(404, -1);
                 } else {
                     response = getJson(server).toString();
+                    t.sendResponseHeaders(200, response.length());
+
+                    OutputStream os = t.getResponseBody();
+                    os.write(response.getBytes());
+                    os.close();
                 }
             }
+        }
+    }
 
-            t.sendResponseHeaders(200, response.length());
+    static class StartServer implements HttpHandler {
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            Matcher matcher = Pattern.compile("/start/([^/]*)").matcher(t.getRequestURI().getPath());
+            t.getResponseHeaders().set("Content-Type", "application/json;charset=utf-8");
+
+            String response = "";
+
+            if (!matcher.find()) {
+                t.sendResponseHeaders(400, -1);
+            } else {
+                String serverName = matcher.group(1);
+                ServerOnDemand server = Main.serverController.findServerByName(serverName);
+
+                response = server.startServer(server.getAverageStartingTime() * 2).toString();
+
+                t.sendResponseHeaders(200, response.length());
+            }
+
             OutputStream os = t.getResponseBody();
             os.write(response.getBytes());
             os.close();
+        }
+    }
+
+    static class StopServer implements HttpHandler {
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            Matcher matcher = Pattern.compile("/stop/([^/]*)").matcher(t.getRequestURI().getPath());
+            t.getResponseHeaders().set("Content-Type", "application/json;charset=utf-8");
+
+            String response = "";
+
+            if (!matcher.find()) {
+                t.sendResponseHeaders(400, -1);
+            } else {
+                String serverName = matcher.group(1);
+                ServerOnDemand server = Main.serverController.findServerByName(serverName);
+
+                if (server.getStatus() == ServerStatus.STARTED || server.getStatus() == ServerStatus.EMPTY) {
+                    server.createStopTask(0);
+                    response = "STOPPING";
+                    t.sendResponseHeaders(200, response.length());
+                } else {
+                    response = "NOT_RUNNING";
+                    t.sendResponseHeaders(400, response.length());
+                }
+
+                OutputStream os = t.getResponseBody();
+                os.write(response.getBytes());
+                os.close();
+            }
         }
     }
 }

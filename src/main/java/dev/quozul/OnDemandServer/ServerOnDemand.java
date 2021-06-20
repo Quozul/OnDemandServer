@@ -73,34 +73,19 @@ public class ServerOnDemand {
 
     /**
      * Starts the given server
-     * @param player Move the given player once the server is started
+     * @param timeout Time to wait for the server to start in milliseconds
      */
-    public StartingStatus startServer(ProxiedPlayer player, long timeout) {
+    public StartingStatus startServer(long timeout) {
         // TODO: Check if server can start
 
+        if (status == ServerStatus.STARTED) return StartingStatus.ALREADY_STARTED;
         if (status != ServerStatus.STOPPED) return StartingStatus.ALREADY_STARTING;
         if (serverController.maxServers > 0 && serverController.maxServers <= serverController.getRunningServers()) return StartingStatus.TOO_MUCH_RUNNING;
 
         try {
             this.process = Runtime.getRuntime().exec(this.command);
-            this.requester = player;
 
-            // Debug
-            /*ProxyServer.getInstance().getScheduler().runAsync(Main.plugin, () -> {
-                // Debug
-                try {
-                    String s;
-                    BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-                    // read the output from the command
-                    while ((s = stdInput.readLine()) != null) {
-                        System.out.println(s);
-                    }
-                    System.out.println("Log ended");
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
-                }
-            });*/
+            this.status = ServerStatus.STARTING;
 
             // Ping server until it is started
             ProxyServer.getInstance().getScheduler().runAsync(Main.plugin, () -> {
@@ -111,14 +96,27 @@ public class ServerOnDemand {
                 }
             });
 
-            this.status = ServerStatus.STARTING;
-
             return StartingStatus.STARTING;
         } catch (IOException ioException) {
             ioException.printStackTrace();
 
             return StartingStatus.UNKNOWN;
         }
+    }
+
+    /**
+     * Starts the given server
+     * @param player Move the given player once the server is started
+     * @param timeout Time to wait for the server to start in milliseconds
+     */
+    public StartingStatus startServer(ProxiedPlayer player, long timeout) {
+        StartingStatus status = startServer(timeout);
+
+        if (status == StartingStatus.STARTING) {
+            this.requester = player;
+        }
+
+        return status;
     }
 
     /**

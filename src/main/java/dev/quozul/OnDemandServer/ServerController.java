@@ -75,7 +75,7 @@ public class ServerController {
     public int getRunningServers() {
         int sum = 0;
         for (Map.Entry<ServerInfo, ServerOnDemand> entry : servers.entrySet()) {
-            if (entry.getValue().getStatus() == ServerStatus.RUNNING) sum++;
+            if (entry.getValue().getStatus() == ServerStatus.STARTED) sum++;
         }
         return sum;
     }

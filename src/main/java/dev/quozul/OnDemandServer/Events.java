@@ -27,7 +27,7 @@ public class Events implements Listener {
         ServerInfo target = e.getTarget();
         ServerOnDemand server = serverController.getServer(target);
 
-        if (server.getStatus() == ServerStatus.RUNNING || server.getStatus() == ServerStatus.EMPTY) {
+        if (server.getStatus() == ServerStatus.STARTED || server.getStatus() == ServerStatus.EMPTY) {
             // Server is currently running
             System.out.println("Connecting to " + server.getName() + "...");
 
@@ -116,8 +116,6 @@ public class Events implements Listener {
 
             e.getRequest().setRetry(false);
             e.setCancelled(true);
-        } else {
-            System.out.println("Plugin is not handling connection.");
         }
     }
 
@@ -134,7 +132,7 @@ public class Events implements Listener {
 
             // Clear server shutdown tasks when player connects to server
             server.clearStopTask();
-            server.setStatus(ServerStatus.RUNNING);
+            server.setStatus(ServerStatus.STARTED);
 
         }
     }
@@ -153,21 +151,22 @@ public class Events implements Listener {
     @EventHandler
     public void onServerStarted(ServerStartedEvent e) {
         long time = e.getPing().getTimeTook();
-        ProxiedPlayer player = e.getServer().getRequester();
 
         e.getServer().setLastStartup(System.currentTimeMillis());
 
         // Save time took for the server to start
         e.getServer().addStartingTime(time);
 
-        System.out.println("Server " + e.getServer().getName() + " requested by " + player.getName() + " started in " + time / 1000 + "s");
-        player.sendMessage(new TextComponent(String.format(Main.messages.getString("startup_time"), time / 1000.)));
+        e.getServer().setStatus(ServerStatus.STARTED);
 
-        e.getServer().setStatus(ServerStatus.RUNNING);
+        ProxiedPlayer player = e.getServer().getRequester();
 
-        // Move player to started server
-        // Handle when player is no longer connected (ie. stop the server)
-        if (player.isConnected()) {
+        if (player != null && player.isConnected()) {
+            System.out.println("Server " + e.getServer().getName() + " requested by " + player.getName() + " started in " + time / 1000 + "s");
+            player.sendMessage(new TextComponent(String.format(Main.messages.getString("startup_time"), time / 1000.)));
+
+            // Move player to started server
+            // Handle when player is no longer connected (ie. stop the server)
             player.connect(e.getServer().getServerInfo());
         }
 

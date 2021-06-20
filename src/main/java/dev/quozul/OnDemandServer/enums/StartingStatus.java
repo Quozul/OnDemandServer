@@ -6,4 +6,5 @@ public enum StartingStatus {
     NOT_ENOUGH_MEMORY,
     UNKNOWN,
     ALREADY_STARTING,
+    ALREADY_STARTED,
 }
