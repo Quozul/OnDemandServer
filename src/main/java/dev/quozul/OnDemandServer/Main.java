@@ -1,5 +1,6 @@
 package dev.quozul.OnDemandServer;
 
+import dev.quozul.OnDemandServer.commands.CreateServer;
 import dev.quozul.OnDemandServer.commands.ReloadConfig;
 import dev.quozul.OnDemandServer.commands.ServerReport;
 import net.md_5.bungee.api.plugin.Plugin;
@@ -32,14 +33,18 @@ public class Main extends Plugin {
 
         Main.serverController = new ServerController();
 
+        reloadConfig();
+
         // Register events
         getProxy().getPluginManager().registerListener(this, new Events());
 
         // Register commands
         getProxy().getPluginManager().registerCommand(this, new ServerReport());
-
-        // Reload config command
         getProxy().getPluginManager().registerCommand(this, new ReloadConfig());
+
+        if (Main.config.getBoolean("allow_server_on_the_fly")) {
+            getProxy().getPluginManager().registerCommand(this, new CreateServer());
+        }
 
         int port = Main.config.getInt("http_port");
         if (port > 0) {
@@ -80,6 +85,10 @@ public class Main extends Plugin {
     public static void reloadConfig() {
         serverController.stopDelay = Main.config.getInt("stop_delay");
         serverController.maxServers = Main.config.getInt("max_servers");
+
+        String[] portRange = Main.config.getString("port_range").split("-");
+        serverController.minPort = Integer.parseInt(portRange[0]);
+        serverController.maxPort = Integer.parseInt(portRange[1]);
     }
 
     // TODO: Close Minecraft server on Proxy stop

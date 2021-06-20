@@ -20,6 +20,7 @@ You have a dedicated server or a VPS and you want to run multiple Minecraft serv
 ### Permissions
 - `ondemandserver.reload` Reload plugin's configuration
 - `ondemandserver.report` Check running servers
+- `ondemandserver.create` Allow a specific user to create servers on the fly
 
 ## Defects
 - If the proxy crashes, the Minecraft servers might still be running but can't be controlled by the user nor the proxy.

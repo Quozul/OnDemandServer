@@ -1,14 +1,21 @@
 package dev.quozul.OnDemandServer;
 
 import dev.quozul.OnDemandServer.enums.ServerStatus;
+import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.config.ConfigurationAdapter;
+import net.md_5.bungee.api.config.ListenerInfo;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.config.Configuration;
 
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 public class ServerController {
     /**
@@ -27,14 +34,14 @@ public class ServerController {
     }
 
     private final HashMap<ServerInfo, ServerOnDemand> servers;
+    private final HashMap<String, File> templates;
 
     public int stopDelay;
     public int maxServers;
+    public int minPort;
+    public int maxPort;
 
     ServerController() {
-        this.stopDelay = Main.config.getInt("stop_delay");
-        this.maxServers = Main.config.getInt("max_servers");
-
         File file = new File(Main.plugin.getDataFolder(), "startingTime.ser");
         HashMap<String, List<Long>> startingTime;
 
@@ -91,6 +98,17 @@ public class ServerController {
                 server.setStatus(ServerStatus.STOPPED);
             } else {
                 server.setStatus(ServerStatus.UNKNOWN);
+            }
+        }
+
+        // Load templates
+        templates = new HashMap<>();
+
+        if (Main.config.getBoolean("allow_server_on_the_fly") && Main.config.contains("templates")) {
+            File templateFolder = new File(Main.config.getString("templates"));
+
+            for (final File template : Objects.requireNonNull(templateFolder.listFiles())) {
+                templates.put(template.getName(), template);
             }
         }
     }
@@ -163,7 +181,87 @@ public class ServerController {
         return serverRunningOnPort || processRunning;
     }
 
+    private static void copyDirectory(File sourceDirectory, File destinationDirectory) throws IOException {
+        if (!destinationDirectory.exists()) {
+            destinationDirectory.mkdir();
+        }
+        for (String f : sourceDirectory.list()) {
+            copyDirectoryCompatibityMode(new File(sourceDirectory, f), new File(destinationDirectory, f));
+        }
+    }
+
+    private static void copyDirectoryCompatibityMode(File source, File destination) throws IOException {
+        if (source.isDirectory()) {
+            copyDirectory(source, destination);
+        } else {
+            copyFile(source, destination);
+        }
+    }
+
+    private static void copyFile(File sourceFile, File destinationFile) throws IOException {
+        try (InputStream in = new FileInputStream(sourceFile);
+             OutputStream out = new FileOutputStream(destinationFile)) {
+            byte[] buf = new byte[1024];
+            int length;
+            while ((length = in.read(buf)) > 0) {
+                out.write(buf, 0, length);
+            }
+        }
+    }
+
+    /**
+     * Creates a new server
+     * @param name Server's name
+     * @param template Template to use for the new server
+     */
+    public void createServer(String name, File template) {
+        int port;
+        // Find an available port in range
+        for (port = minPort; port < maxPort; port++) if (isAvailable(port)) break;
+
+        if (port <= 0) throw new RuntimeException("No available port found in range");
+
+        InetSocketAddress address = new InetSocketAddress("127.0.0.1", port);
+        String motd = name;
+        boolean restricted = false;
+
+        ProxyServer proxy = Main.plugin.getProxy();
+
+        // Add server to bungeecord
+        ServerInfo serverInfo = proxy.constructServerInfo(name, address, motd, restricted);
+        proxy.getServers().put(name, serverInfo);
+
+        // Create configuration
+        Configuration configuration = new Configuration();
+        configuration.set("directory", Main.config.getString("server_folder") + File.separator + name);
+        configuration.set("IReallyKnowWhatIAmDoingISwear", true);
+        configuration.set("jar_file", "spigot.jar");
+        configuration.set("maximum_memory", 8192);
+
+        // Add server to plugin's configuration
+        ServerOnDemand server = new ServerOnDemand(name, configuration, serverInfo, port);
+        this.servers.put(serverInfo, server);
+
+        server.setStatus(ServerStatus.STOPPED);
+
+        // Copy template folder
+        String destinationDirectoryLocation = Main.config.getString("server_folder") + File.separator + name;
+        File destinationDirectory = new File(destinationDirectoryLocation);
+
+        try {
+            copyDirectory(template, destinationDirectory);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // TODO: Add forced host
+    }
+
     public HashMap<ServerInfo, ServerOnDemand> getServers() {
         return this.servers;
+    }
+
+    public HashMap<String, File> getTemplates() {
+        return this.templates;
     }
 }

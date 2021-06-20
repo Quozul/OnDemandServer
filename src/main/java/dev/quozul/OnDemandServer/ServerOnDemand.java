@@ -23,11 +23,11 @@ import static dev.quozul.OnDemandServer.Main.serverController;
  * Represents a server that can be controlled by the plugin
  */
 public class ServerOnDemand {
-    private final int port;
     private final String name;
     private final ServerInfo serverInfo;
     private final SocketAddress address;
 
+    private int port;
     private long lastStop;
     private Process process;
     private long lastStartup;
@@ -65,6 +65,21 @@ public class ServerOnDemand {
         this.builder.directory(directory);
 
         // Build command
+        List<String> arguments = buildCommand(config);
+
+        builder.command(arguments);
+    }
+
+    public ServerOnDemand(String name, Configuration config, ServerInfo serverInfo, int port) {
+        this(name, config, serverInfo);
+        this.port = port;
+
+        List<String> arguments = buildCommand(config);
+
+        builder.command(arguments);
+    }
+
+    private List<String> buildCommand(Configuration config) {
         List<String> arguments = new ArrayList<>();
         // java -Xmx8G -Xms2G -jar -DIReallyKnowWhatIAmDoingISwear paper.jar nogui
         arguments.add("java");
@@ -83,9 +98,15 @@ public class ServerOnDemand {
             arguments.add("-DIReallyKnowWhatIAmDoingISwear");
 
         arguments.add(config.getString("jar_file")); // Jar filename
+
+        if (this.port >= 0) {
+            arguments.add("--port");
+            arguments.add(String.valueOf(this.port));
+        }
+
         arguments.add("nogui");
 
-        builder.command(arguments);
+        return arguments;
     }
 
     /**

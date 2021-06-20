@@ -30,10 +30,10 @@ http_port: -1
 allow_server_on_the_fly: false
 
 # Path where the new servers will be created, the folder must exists
-server_folder: 'C:\Servers\on_the_fly\'
+server_folder: '/servers/on_the_fly'
 
 # Template servers for the on the fly servers
-templates: 'C:\Servers\templates\'
+templates: '/servers/templates'
 
 port_range: 25566-25599
 
