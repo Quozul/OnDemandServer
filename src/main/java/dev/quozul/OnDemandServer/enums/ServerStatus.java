@@ -10,4 +10,5 @@ public enum ServerStatus {
     UNKNOWN,
     STANDALONE,
     UPDATING,
+    DETACHED,
 }

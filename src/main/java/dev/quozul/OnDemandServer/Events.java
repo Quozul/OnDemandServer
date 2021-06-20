@@ -128,7 +128,7 @@ public class Events implements Listener {
         // Clear server shutdown tasks when player connects to server
         server.clearStopTask();
 
-        if (server.getStatus() == ServerStatus.STANDALONE) {
+        if (server.getStatus() == ServerStatus.DETACHED) {
             TextComponent textComponent = new TextComponent("This server is not controlled by the proxy, please inform the server administrator.");
             e.getPlayer().sendMessage(textComponent);
         }
@@ -139,7 +139,7 @@ public class Events implements Listener {
         ServerOnDemand server = serverController.getServer(e.getTarget());
 
         // If server was started by the proxy
-        if (server != null && server.getStatus() != ServerStatus.STANDALONE) {
+        if (server != null && server.getStatus() != ServerStatus.STANDALONE && server.getStatus() != ServerStatus.DETACHED) {
             // TODO: Check if server is still responding, if not, remove it from list (ie. admin stopped the server)
             server.requestServerStop();
         }

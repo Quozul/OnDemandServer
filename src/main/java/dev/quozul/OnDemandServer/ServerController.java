@@ -62,8 +62,10 @@ public class ServerController {
                 server.setStartingTimes(startingTime.get(name));
             }
 
-            if (isServerStarted(serverInfo)) {
+            if (!serverConfig.contains(name)) {
                 server.setStatus(ServerStatus.STANDALONE);
+            } else if (isServerStarted(serverInfo)) {
+                server.setStatus(ServerStatus.DETACHED);
             } else {
                 server.setStatus(ServerStatus.STOPPED);
             }
