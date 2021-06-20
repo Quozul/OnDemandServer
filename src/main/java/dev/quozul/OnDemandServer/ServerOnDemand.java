@@ -6,13 +6,16 @@ import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.scheduler.ScheduledTask;
+import net.md_5.bungee.config.Configuration;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 import static dev.quozul.OnDemandServer.Main.serverController;
 
@@ -22,7 +25,6 @@ import static dev.quozul.OnDemandServer.Main.serverController;
 public class ServerOnDemand {
     private final int port;
     private final String name;
-    private final String command;
     private final ServerInfo serverInfo;
     private final SocketAddress address;
 
@@ -31,12 +33,12 @@ public class ServerOnDemand {
     private long lastStartup;
     private ServerStatus status;
     private ScheduledTask stopTask;
+    private ProcessBuilder builder;
     private ProxiedPlayer requester;
     private List<Long> startingTimes;
 
-    public ServerOnDemand(String name, String command, ServerInfo serverInfo) {
+    public ServerOnDemand(String name, ServerInfo serverInfo) {
         this.name = name;
-        this.command = command;
         this.serverInfo = serverInfo;
 
         this.status = ServerStatus.STOPPED;
@@ -47,6 +49,43 @@ public class ServerOnDemand {
 
         this.lastStartup = -1;
         this.lastStop = -1;
+    }
+
+    public ServerOnDemand(String name, Configuration config, ServerInfo serverInfo) {
+        this(name, serverInfo);
+
+        if (!config.contains("directory")) {
+            throw new RuntimeException("Invalid configuration, missing directory path");
+        } else if (!config.contains("jar_file")) {
+            throw new RuntimeException("Invalid configuration, missing jar file name");
+        }
+
+        this.builder = new ProcessBuilder();
+        File directory = new File(config.getString("directory"));
+        this.builder.directory(directory);
+
+        // Build command
+        List<String> arguments = new ArrayList<>();
+        // java -Xmx8G -Xms2G -jar -DIReallyKnowWhatIAmDoingISwear paper.jar nogui
+        arguments.add("java");
+
+        // JVM arguments
+        if (config.contains("maximum_memory"))
+            arguments.add("-Xmx" + config.getInt("maximum_memory") + "M");
+        if (config.contains("minimum_memory"))
+            arguments.add("-Xms" + config.getInt("minimum_memory") + "M");
+        if (config.contains("jvm_arguments"))
+            arguments.add(config.getString("jvm_arguments"));
+
+        arguments.add("-jar");
+
+        if (config.contains("IReallyKnowWhatIAmDoingISwear") && config.getBoolean("IReallyKnowWhatIAmDoingISwear"))
+            arguments.add("-DIReallyKnowWhatIAmDoingISwear");
+
+        arguments.add(config.getString("jar_file")); // Jar filename
+        arguments.add("nogui");
+
+        builder.command(arguments);
     }
 
     /**
@@ -78,12 +117,13 @@ public class ServerOnDemand {
     public StartingStatus startServer(long timeout) {
         // TODO: Check if server can start
 
+        if (status == ServerStatus.NOT_CONFIGURED) return StartingStatus.NOT_CONFIGURED;
         if (status == ServerStatus.STARTED) return StartingStatus.ALREADY_STARTED;
         if (status != ServerStatus.STOPPED) return StartingStatus.ALREADY_STARTING;
         if (serverController.maxServers > 0 && serverController.maxServers <= serverController.getRunningServers()) return StartingStatus.TOO_MUCH_RUNNING;
 
         try {
-            this.process = Runtime.getRuntime().exec(this.command);
+            this.process = builder.start();
 
             this.status = ServerStatus.STARTING;
 
@@ -160,11 +200,10 @@ public class ServerOnDemand {
      */
     public void createStopTask(long delay) {
         // Stop after delay
-        System.out.println("Stopping server in " + Main.serverController.stopDelay + " minute");
+        System.out.println("Stopping server " + this.address.toString() + " in " + delay + " minute");
+
         this.stopTask = ProxyServer.getInstance().getScheduler()
                 .schedule(Main.plugin, new Stop(this), delay, TimeUnit.MINUTES);
-
-        System.out.println("Created stop task " + this.stopTask.getId() + " for server " + this.address.toString());
     }
 
     public boolean safelyRemove() {
@@ -175,7 +214,7 @@ public class ServerOnDemand {
         if (process != null && portAvailable) {
             process.destroy();
             removeProcess();
-            System.out.println("Server not responding, removing it from list");
+            Main.plugin.getLogger().log(Level.WARNING, "Server not responding, removing it from list");
             status = ServerStatus.STOPPED;
             return true;
         }

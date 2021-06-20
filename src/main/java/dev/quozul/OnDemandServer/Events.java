@@ -15,6 +15,8 @@ import net.md_5.bungee.api.event.*;
 import net.md_5.bungee.api.plugin.Listener;
 import net.md_5.bungee.event.EventHandler;
 
+import java.util.logging.Level;
+
 import static dev.quozul.OnDemandServer.Main.serverController;
 
 
@@ -56,7 +58,7 @@ public class Events implements Listener {
             }
 
             e.getRequest().setRetry(false);
-        } else if (server.getStatus() != ServerStatus.STANDALONE) {
+        } else if (server.getStatus() != ServerStatus.STANDALONE && server.getStatus() != ServerStatus.UNKNOWN) {
             // Server can be controlled by plugin
             long time = server.getAverageStartingTime();
 
@@ -104,7 +106,7 @@ public class Events implements Listener {
                     break;
 
                 case UNKNOWN:
-                    System.out.println("Something went wrong when starting the server!");
+                    Main.plugin.getLogger().log(Level.SEVERE, "Something went wrong when starting the server!");
                     message.setText("Something went wrong when starting the server!");
 
                     if (e.getPlayer().isConnected()) e.getPlayer().sendMessage(message);
@@ -114,6 +116,10 @@ public class Events implements Listener {
 
             }
 
+            e.getRequest().setRetry(false);
+            e.setCancelled(true);
+        } else if (server.getStatus() == ServerStatus.UNKNOWN) {
+            e.getPlayer().sendMessage(new TextComponent("Sorry, something weird happened."));
             e.getRequest().setRetry(false);
             e.setCancelled(true);
         }
@@ -182,7 +188,7 @@ public class Events implements Listener {
 
         e.getServer().setStatus(ServerStatus.STOPPED);
 
-        System.out.println("Server " + e.getServer().getName() + " requested by " + player.getName() + " failed in " + time / 1000 + "s");
+        Main.plugin.getLogger().log(Level.WARNING, "Server " + e.getServer().getName() + " requested by " + player.getName() + " failed in " + time / 1000 + "s");
         player.sendMessage(new TextComponent(Main.messages.getString("start_failed")));
 
         e.getServer().safelyRemove();

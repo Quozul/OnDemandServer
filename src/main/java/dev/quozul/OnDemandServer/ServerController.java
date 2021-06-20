@@ -8,6 +8,7 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.util.*;
+import java.util.logging.Level;
 
 public class ServerController {
     /**
@@ -51,10 +52,28 @@ public class ServerController {
 
         for (Map.Entry<String, ServerInfo> entry : servers.entrySet()) {
             String name = entry.getKey();
-            String command = serverConfig.getString(name);
             ServerInfo serverInfo = entry.getValue();
 
-            ServerOnDemand server = new ServerOnDemand(name, command, serverInfo);
+            ServerOnDemand server;
+
+            boolean inConfig = serverConfig.contains(name);
+
+            if (!inConfig) {
+                server = new ServerOnDemand(name, serverInfo);
+            } else {
+                Configuration config = serverConfig.getSection(name);
+
+                try {
+                    server = new ServerOnDemand(name, config, serverInfo);
+                } catch (RuntimeException e) {
+                    server = new ServerOnDemand(name, serverInfo);
+                    server.setStatus(ServerStatus.NOT_CONFIGURED);
+
+                    Main.plugin.getLogger().log(Level.SEVERE, "Could not load configuration for server " + name);
+                    Main.plugin.getLogger().log(Level.SEVERE, e.getMessage());
+                }
+            }
+
             this.servers.put(serverInfo, server);
 
             // Load starting times
@@ -62,12 +81,16 @@ public class ServerController {
                 server.setStartingTimes(startingTime.get(name));
             }
 
-            if (!serverConfig.contains(name)) {
-                server.setStatus(ServerStatus.STANDALONE);
-            } else if (isServerStarted(serverInfo)) {
+            boolean serverStarted = isServerStarted(serverInfo);
+
+            if (serverStarted && inConfig) {
                 server.setStatus(ServerStatus.DETACHED);
-            } else {
+            } else if (serverStarted) {
+                server.setStatus(ServerStatus.STANDALONE);
+            } else if (inConfig) {
                 server.setStatus(ServerStatus.STOPPED);
+            } else {
+                server.setStatus(ServerStatus.UNKNOWN);
             }
         }
     }

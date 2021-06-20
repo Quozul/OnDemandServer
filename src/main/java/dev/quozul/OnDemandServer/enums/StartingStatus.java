@@ -7,4 +7,5 @@ public enum StartingStatus {
     UNKNOWN,
     ALREADY_STARTING,
     ALREADY_STARTED,
+    NOT_CONFIGURED,
 }

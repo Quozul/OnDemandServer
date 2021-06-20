@@ -5,6 +5,7 @@ import dev.quozul.OnDemandServer.events.ServerStartedEvent;
 import net.md_5.bungee.api.ProxyServer;
 
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 public class Ping {
     private final static long MAX_STARTUP_TIME = 60000; // Time during which the server is pinged in ms
@@ -33,7 +34,7 @@ public class Ping {
     private void ping() {
         // Ping timeout
         if (this.end - this.start > timeout) {
-            System.out.println("Maximum ping tries reached, aborting.");
+            Main.plugin.getLogger().log(Level.WARNING, "Maximum ping tries reached, aborting.");
             ProxyServer.getInstance().getPluginManager().callEvent(new ServerStartFailEvent(server, this));
             return;
         }

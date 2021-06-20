@@ -11,4 +11,5 @@ public enum ServerStatus {
     STANDALONE,
     UPDATING,
     DETACHED,
+    NOT_CONFIGURED,
 }

@@ -5,6 +5,7 @@ import dev.quozul.OnDemandServer.events.ServerStoppedEvent;
 import net.md_5.bungee.api.ProxyServer;
 
 import java.io.*;
+import java.util.logging.Level;
 
 public class Stop implements Runnable {
     private final ServerOnDemand server;
@@ -29,7 +30,7 @@ public class Stop implements Runnable {
         if (!process.isAlive()) {
             process.destroy();
             server.removeProcess();
-            System.out.println("Process not found");
+            Main.plugin.getLogger().log(Level.SEVERE, "Process not found");
             return;
         }
 
