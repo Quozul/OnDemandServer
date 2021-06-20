@@ -89,6 +89,21 @@ public class ServerController {
     }
 
     /**
+     * Get a server by name
+     * @param name Server object
+     * @return The server
+     */
+    public ServerOnDemand findServerByName(String name) {
+        for (Map.Entry<ServerInfo, ServerOnDemand> entry : servers.entrySet()) {
+            ServerOnDemand server = entry.getValue();
+            if (server.getName().equals(name)) {
+                return server;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Adds starting time to the history
      */
     public void saveStartingTimes() {

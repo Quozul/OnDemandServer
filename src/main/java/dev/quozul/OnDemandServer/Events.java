@@ -4,6 +4,7 @@ import dev.quozul.OnDemandServer.enums.ServerStatus;
 import dev.quozul.OnDemandServer.enums.StartingStatus;
 import dev.quozul.OnDemandServer.events.ServerStartFailEvent;
 import dev.quozul.OnDemandServer.events.ServerStartedEvent;
+import dev.quozul.OnDemandServer.events.ServerStoppedEvent;
 import net.md_5.bungee.api.Callback;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.ServerConnectRequest;
@@ -149,6 +150,8 @@ public class Events implements Listener {
         long time = e.getPing().getTimeTook();
         ProxiedPlayer player = e.getServer().getRequester();
 
+        e.getServer().setLastStartup(System.currentTimeMillis());
+
         // Save time took for the server to start
         e.getServer().addStartingTime(time);
 
@@ -179,5 +182,10 @@ public class Events implements Listener {
         player.sendMessage(new TextComponent(Main.messages.getString("start_failed")));
 
         e.getServer().safelyRemove();
+    }
+
+    @EventHandler
+    public void onServerStop(ServerStoppedEvent e) {
+        e.getServer().setLastStop(System.currentTimeMillis());
     }
 }

@@ -40,6 +40,12 @@ public class Main extends Plugin {
 
         // Reload config command
         getProxy().getPluginManager().registerCommand(this, new ReloadConfig());
+
+        try {
+            new HttpApi();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static Configuration loadConfigFile(String filename) {

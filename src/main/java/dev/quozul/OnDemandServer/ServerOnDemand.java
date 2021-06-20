@@ -26,7 +26,9 @@ public class ServerOnDemand {
     private final ServerInfo serverInfo;
     private final SocketAddress address;
 
+    private long lastStop;
     private Process process;
+    private long lastStartup;
     private ServerStatus status;
     private ScheduledTask stopTask;
     private ProxiedPlayer requester;
@@ -42,6 +44,9 @@ public class ServerOnDemand {
         this.port = ((InetSocketAddress) this.address).getPort();
         this.startingTimes = new ArrayList<>();
         this.status = ServerStatus.UNKNOWN;
+
+        this.lastStartup = -1;
+        this.lastStop = -1;
     }
 
     /**
@@ -220,5 +225,21 @@ public class ServerOnDemand {
 
     public List<Long> getStartingTimes() {
         return this.startingTimes;
+    }
+
+    public long getLastStop() {
+        return lastStop;
+    }
+
+    public void setLastStop(long lastStop) {
+        this.lastStop = lastStop;
+    }
+
+    public long getLastStartup() {
+        return lastStartup;
+    }
+
+    public void setLastStartup(long lastStartup) {
+        this.lastStartup = lastStartup;
     }
 }
