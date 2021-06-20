@@ -22,17 +22,17 @@ public class ReloadConfig extends Command {
         if ((sender instanceof ProxiedPlayer)) {
             ProxiedPlayer p = (ProxiedPlayer) sender;
             if (!p.hasPermission("ondemandserver.reload")) {
-                p.sendMessage(new TextComponent(Main.configuration.getString("no_permission")));
+                p.sendMessage(new TextComponent(Main.messages.getString("no_permission")));
                 return;
             }
         }
 
         // Load configuration
         try {
-            Main.configuration = ConfigurationProvider.getProvider(YamlConfiguration.class)
+            Main.config = ConfigurationProvider.getProvider(YamlConfiguration.class)
                     .load(new File(Main.plugin.getDataFolder(), "config.yml"));
 
-            Main.serverController.reloadConfig();
+            Main.reloadConfig();
 
             sender.sendMessage(new TextComponent("Config reloaded!"));
         } catch (IOException e) {

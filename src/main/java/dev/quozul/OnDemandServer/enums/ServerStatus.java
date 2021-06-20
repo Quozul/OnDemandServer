@@ -1,4 +1,4 @@
-package dev.quozul.OnDemandServer;
+package dev.quozul.OnDemandServer.enums;
 
 public enum ServerStatus {
     STARTING,
@@ -9,4 +9,5 @@ public enum ServerStatus {
     ERROR,
     UNKNOWN,
     STANDALONE,
+    UPDATING,
 }

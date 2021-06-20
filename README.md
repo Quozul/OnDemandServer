@@ -22,7 +22,7 @@ You have a dedicated server or a VPS and you want to run multiple Minecraft serv
 - `ondemandserver.report` Check running servers
 
 ## Defects
-- If the proxy crashes, the Minecraft servers might still running but can't be controlled by the user nor the proxy.
+- If the proxy crashes, the Minecraft servers might still be running but can't be controlled by the user nor the proxy.
 - Not tested on distant servers.
 
 ## TODO
@@ -39,6 +39,5 @@ You have a dedicated server or a VPS and you want to run multiple Minecraft serv
     - remove a server from config file (only the servers created on-the-fly).
     - start a server.
     - stop a running server.
-    - fix a server that isn't working.
 - Web interface to manage servers (plugins, worlds, start/stop, create, monitor, ...).
 - Port to Velocity.

@@ -1,21 +1,3 @@
-# Message send to a player trying to switch to a stopped server
-redirect_message: 'Server is starting, you''ll be automatically redirected.'
-
-# Message to send when a non-connected player tries to connect to a non-started server
-kick_message: 'Server is starting, retry in a few seconds.'
-
-# Message displayed when a player wants to start a server, printing estimated time remaining, must include %f
-estimated_startup: 'Estimated time for startup %.2fs.'
-
-# Message displayed once a server has started, must include %f
-startup_time: 'Server started in %.2fs. Redirecting...'
-
-# Message displayed when a player tries to execute a command he's not allowed to
-no_permission: 'You do not have permission to use this command.'
-
-# Message displayed when a server fail to start
-start_failed: 'Sorry, the server you requested could not be started.'
-
 # Delay before the servers stops in minutes
 stop_delay: 1
 
@@ -27,9 +9,9 @@ stop_command: "stop\n"  # For the \n to work, must be between quotes ""
 # Amount of servers that the plugin can start
 # Set to <= 0 for no limit
 max_servers: 1
-# Message sent when a player tries to connect when there are already too many servers running
-too_many_running: "Too much servers are already running!"
 
+
+# Syntax: [server name]: [command to start the server]
 servers:
   # This is an example for a server named "lobby" hosted on the same Windows machine as the proxy
   lobby: 'cmd /k cd "C:\Servers\test" && start.bat'

@@ -1,5 +1,6 @@
 package dev.quozul.OnDemandServer;
 
+import dev.quozul.OnDemandServer.enums.ServerStatus;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.config.Configuration;
 
@@ -30,8 +31,8 @@ public class ServerController {
     public int maxServers;
 
     ServerController() {
-        this.stopDelay = Main.configuration.getInt("stop_delay");
-        this.maxServers = Main.configuration.getInt("max_servers");
+        this.stopDelay = Main.config.getInt("stop_delay");
+        this.maxServers = Main.config.getInt("max_servers");
 
         File file = new File(Main.plugin.getDataFolder(), "startingTime.ser");
         HashMap<String, List<Long>> startingTime;
@@ -45,7 +46,7 @@ public class ServerController {
 
         // Load server information
         Map<String, ServerInfo> servers = Main.plugin.getProxy().getServers();
-        Configuration serverConfig = Main.configuration.getSection("servers");
+        Configuration serverConfig = Main.config.getSection("servers");
         this.servers = new HashMap<>();
 
         for (Map.Entry<String, ServerInfo> entry : servers.entrySet()) {
@@ -77,7 +78,13 @@ public class ServerController {
         return sum;
     }
 
+    /**
+     * Get a server
+     * @param serverInfo Target server
+     * @return The server or null if not found
+     */
     public ServerOnDemand getServer(ServerInfo serverInfo) {
+        if (!this.servers.containsKey(serverInfo)) return null;
         return this.servers.get(serverInfo);
     }
 
@@ -102,14 +109,6 @@ public class ServerController {
     }
 
     /**
-     * Reload the configuration variables
-     */
-    public void reloadConfig() {
-        this.stopDelay = Main.configuration.getInt("stop_delay");
-        this.maxServers = Main.configuration.getInt("max_servers");
-    }
-
-    /**
      * Verify if a process is running on the target's port and if the process is registered by the plugin
      * @deprecated Use ServerOnDemand.getStatus
      * @param serverInfo Target
@@ -131,16 +130,6 @@ public class ServerController {
      */
     public boolean canBeControlled(ServerInfo serverInfo) {
         return this.servers.containsKey(serverInfo) && this.getServer(serverInfo).getStatus() != ServerStatus.STANDALONE;
-    }
-
-    /**
-     * Check if the given server is controlled by the proxy server
-     * @deprecated
-     * @param serverInfo Target
-     * @return Is controlled by proxy
-     */
-    public boolean isControlledByProxy(ServerInfo serverInfo) {
-        return this.getServer(serverInfo).getStatus() == ServerStatus.RUNNING;
     }
 
     public HashMap<ServerInfo, ServerOnDemand> getServers() {

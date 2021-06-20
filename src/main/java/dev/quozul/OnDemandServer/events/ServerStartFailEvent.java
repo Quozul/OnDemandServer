@@ -1,14 +1,16 @@
-package dev.quozul.OnDemandServer;
+package dev.quozul.OnDemandServer.events;
 
+import dev.quozul.OnDemandServer.Ping;
+import dev.quozul.OnDemandServer.ServerOnDemand;
 import net.md_5.bungee.api.plugin.Event;
 
-public class ServerStartedEvent extends Event {
+public class ServerStartFailEvent extends Event {
     private final ServerOnDemand server;
     private final Ping ping;
 
-    ServerStartedEvent(ServerOnDemand server, Ping ping) {
-        this.ping = ping;
+    public ServerStartFailEvent(ServerOnDemand server, Ping ping) {
         this.server = server;
+        this.ping = ping;
     }
 
     public ServerOnDemand getServer() {

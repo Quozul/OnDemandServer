@@ -1,5 +1,9 @@
 package dev.quozul.OnDemandServer;
 
+import dev.quozul.OnDemandServer.enums.ServerStatus;
+import dev.quozul.OnDemandServer.events.ServerStoppedEvent;
+import net.md_5.bungee.api.ProxyServer;
+
 import java.io.*;
 
 public class Stop implements Runnable {
@@ -44,6 +48,8 @@ public class Stop implements Runnable {
             server.removeProcess();
             System.out.println("Server " + server.getName() + " stopped!");
             server.setStatus(ServerStatus.STOPPED);
+
+            ProxyServer.getInstance().getPluginManager().callEvent(new ServerStoppedEvent(server));
         }
     }
 
@@ -52,7 +58,7 @@ public class Stop implements Runnable {
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stdin));
 
         // TODO: Put server to sleep instead of stopping it
-        writer.write(Main.configuration.getString("stop_command"));
+        writer.write(Main.config.getString("stop_command"));
         writer.flush();
         writer.close();
 

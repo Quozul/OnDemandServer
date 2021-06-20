@@ -1,5 +1,7 @@
 package dev.quozul.OnDemandServer;
 
+import dev.quozul.OnDemandServer.enums.ServerStatus;
+import dev.quozul.OnDemandServer.enums.StartingStatus;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
@@ -68,11 +70,11 @@ public class ServerOnDemand {
      * Starts the given server
      * @param player Move the given player once the server is started
      */
-    public char startServer(ProxiedPlayer player, long timeout) {
+    public StartingStatus startServer(ProxiedPlayer player, long timeout) {
         // TODO: Check if server can start
 
-        if (status != ServerStatus.STOPPED) return 3;
-        if (serverController.maxServers > 0 && serverController.maxServers <= serverController.getRunningServers()) return 1;
+        if (status != ServerStatus.STOPPED) return StartingStatus.ALREADY_STARTING;
+        if (serverController.maxServers > 0 && serverController.maxServers <= serverController.getRunningServers()) return StartingStatus.TOO_MUCH_RUNNING;
 
         try {
             this.process = Runtime.getRuntime().exec(this.command);
@@ -106,11 +108,11 @@ public class ServerOnDemand {
 
             this.status = ServerStatus.STARTING;
 
-            return 0;
+            return StartingStatus.STARTING;
         } catch (IOException ioException) {
             ioException.printStackTrace();
 
-            return 2;
+            return StartingStatus.UNKNOWN;
         }
     }
 

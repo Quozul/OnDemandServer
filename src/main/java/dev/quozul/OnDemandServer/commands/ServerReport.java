@@ -25,7 +25,7 @@ public class ServerReport extends Command {
         if ((sender instanceof ProxiedPlayer)) {
             ProxiedPlayer p = (ProxiedPlayer)sender;
             if (!p.hasPermission("ondemandserver.report")) {
-                p.sendMessage(new TextComponent(Main.configuration.getString("no_permission")));
+                p.sendMessage(new TextComponent(Main.messages.getString("no_permission")));
                 return;
             }
 
