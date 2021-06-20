@@ -125,12 +125,17 @@ public class Events implements Listener {
     public void onServerConnected(ServerConnectedEvent e) {
         ServerOnDemand server = serverController.getServer(e.getServer().getInfo());
 
-        // Clear server shutdown tasks when player connects to server
-        server.clearStopTask();
-
         if (server.getStatus() == ServerStatus.DETACHED) {
+
             TextComponent textComponent = new TextComponent("This server is not controlled by the proxy, please inform the server administrator.");
             e.getPlayer().sendMessage(textComponent);
+
+        } else if (server.getStatus() != ServerStatus.STANDALONE) {
+
+            // Clear server shutdown tasks when player connects to server
+            server.clearStopTask();
+            server.setStatus(ServerStatus.RUNNING);
+
         }
     }
 
