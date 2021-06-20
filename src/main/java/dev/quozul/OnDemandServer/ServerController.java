@@ -123,15 +123,6 @@ public class ServerController {
         return serverRunningOnPort || processRunning;
     }
 
-    /**
-     * Tell if the server can be controlled by the proxy (aka. does the plugin has a configuration for the server)
-     * @param serverInfo Target
-     * @return The server can be controlled by the proxy
-     */
-    public boolean canBeControlled(ServerInfo serverInfo) {
-        return this.servers.containsKey(serverInfo) && this.getServer(serverInfo).getStatus() != ServerStatus.STANDALONE;
-    }
-
     public HashMap<ServerInfo, ServerOnDemand> getServers() {
         return this.servers;
     }
