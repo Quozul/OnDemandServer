@@ -1,3 +1,7 @@
+######################
+# MAIN CONFIGURATION #
+######################
+
 # Delay before the servers stops in minutes
 stop_delay: 1
 
@@ -10,9 +14,32 @@ stop_command: "stop\n"  # For the \n to work, must be between quotes ""
 # Set to <= 0 for no limit
 max_servers: 1
 
+###################
+# HTTP API SERVER #
+###################
+
 # Enable HTTP server to manage the servers
 # Set to <= 0 to disable
 http_port: -1
+
+#####################
+# SERVER ON THE FLY #
+#####################
+
+# Enable this to allow creation of servers on the fly via /odscreate command or API if enabled
+allow_server_on_the_fly: false
+
+# Path where the new servers will be created, the folder must exists
+server_folder: 'C:\Servers\on_the_fly\'
+
+# Template servers for the on the fly servers
+templates: 'C:\Servers\templates\'
+
+port_range: 25566-25599
+
+#################
+# PROXY SERVERS #
+#################
 
 # Syntax: [server name]: [command to start the server]
 servers:
