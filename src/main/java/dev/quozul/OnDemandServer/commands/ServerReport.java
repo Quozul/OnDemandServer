@@ -1,6 +1,7 @@
 package dev.quozul.OnDemandServer.commands;
 
 import dev.quozul.OnDemandServer.Main;
+import dev.quozul.OnDemandServer.ServerOnDemand;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -24,7 +25,7 @@ public class ServerReport extends Command {
         if ((sender instanceof ProxiedPlayer)) {
             ProxiedPlayer p = (ProxiedPlayer)sender;
             if (!p.hasPermission("ondemandserver.report")) {
-                p.sendMessage(new TextComponent(Main.configuration.getString("no_permission")));
+                p.sendMessage(new TextComponent(Main.messages.getString("no_permission")));
                 return;
             }
 
@@ -33,48 +34,12 @@ public class ServerReport extends Command {
 
             AtomicBoolean somethingIsWrong = new AtomicBoolean(false);
 
-            servers.forEach((name, serverInfo) -> {
-                boolean isControlled = serverController.isControlledByProxy(serverInfo);
-                boolean canBeControlled = serverController.canBeControlled.apply(serverInfo);
-                boolean isStarted = serverController.isServerStarted(serverInfo);
-
-                boolean isOrphan = isStarted && canBeControlled && !isControlled;
-                boolean isReady = !isStarted && !isControlled && canBeControlled;
-                boolean isLost = !isStarted && isControlled;
-
-                builder.append("§7§lServer ").append(name).append("§r§7\n");
-
-                if (isReady) {
-                    builder.append("§8  + §7Can be controlled by proxy\n");
-                }
-                if (isOrphan) {
-                    builder.append("  §eWARNING\n");
-                    builder.append("§8  + §eIs running but not attached\n");
-                    somethingIsWrong.set(true);
-                }
-                if (isLost) {
-                    builder.append("  §cERROR\n");
-                    builder.append("§8  + §cIs attached but not running\n");
-                    somethingIsWrong.set(true);
-                }
-                if (!canBeControlled) {
-                    builder.append("§8  + §7Is a standalone server\n");
-                }
-                if (isControlled && isStarted) {
-                    builder.append("§8  + §7Is controlled by proxy\n");
-                }
-
-                if (isStarted) {
-                    builder.append("§8  + §2Is running\n");
-                } else {
-                    builder.append("§8  + §cIs offline\n");
-                }
-            });
-
-            if (somethingIsWrong.get())
-                builder.append("§cSomething is wrong!");
-            else
-                builder.append("§2Everything is fine.");
+            for (Map.Entry<ServerInfo, ServerOnDemand> entry : serverController.getServers().entrySet()) {
+                builder.append(entry.getValue().getName())
+                        .append(" : ")
+                        .append(entry.getValue().getStatus())
+                        .append("\n");
+            }
 
             TextComponent textComponent = new TextComponent(builder.toString());
             p.sendMessage(textComponent);

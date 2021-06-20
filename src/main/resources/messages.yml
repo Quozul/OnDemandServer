@@ -1,0 +1,20 @@
+# Message send to a player trying to switch to a stopped server
+redirect_message: 'Server is starting, you''ll be automatically redirected.'
+
+# Message to send when a non-connected player tries to connect to a non-started server
+kick_message: 'Server is starting, retry in a few seconds.'
+
+# Message displayed when a player wants to start a server, printing estimated time remaining, must include %f
+estimated_startup: 'Estimated time for startup %.2fs.'
+
+# Message displayed once a server has started, must include %f
+startup_time: 'Server started in %.2fs. Redirecting...'
+
+# Message displayed when a player tries to execute a command he's not allowed to
+no_permission: 'You do not have permission to use this command.'
+
+# Message displayed when a server fail to start
+start_failed: 'Sorry, the server you requested could not be started.'
+
+# Message sent when a player tries to connect when there are already too many servers running
+too_many_running: "Too much servers are already running!"

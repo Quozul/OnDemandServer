@@ -14,23 +14,50 @@ import java.nio.file.Files;
 
 public class Main extends Plugin {
     public static Plugin plugin;
-    public static Configuration configuration;
+    public static Configuration config;
+    public static Configuration messages;
     public static ServerController serverController;
 
     @Override
     public void onEnable() {
         Main.plugin = this;
 
-        // Write default configuration file
+        // Write default configuration folder
         if (!getDataFolder().exists())
             getDataFolder().mkdir();
 
-        // Read configuration
-        File file = new File(getDataFolder(), "config.yml");
+        // Read configuration files
+        Main.config = loadConfigFile("config.yml");
+        Main.messages = loadConfigFile("messages.yml");
 
-        if (!file.exists()) {
-            try (InputStream in = getResourceAsStream("config.yml")) {
-                Files.copy(in, file.toPath());
+        Main.serverController = new ServerController();
+
+        // Register events
+        getProxy().getPluginManager().registerListener(this, new Events());
+
+        // Register commands
+        getProxy().getPluginManager().registerCommand(this, new ServerReport());
+
+        // Reload config command
+        getProxy().getPluginManager().registerCommand(this, new ReloadConfig());
+
+        int port = Main.config.getInt("http_port");
+        if (port > 0) {
+            try {
+                new HttpApi(port);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static Configuration loadConfigFile(String filename) {
+        // Read configuration
+        File messagesFile = new File(Main.plugin.getDataFolder(), filename);
+
+        if (!messagesFile.exists()) {
+            try (InputStream in = Main.plugin.getResourceAsStream(filename)) {
+                Files.copy(in, messagesFile.toPath());
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -38,22 +65,21 @@ public class Main extends Plugin {
 
         // Load configuration
         try {
-            Main.configuration = ConfigurationProvider.getProvider(YamlConfiguration.class)
-                    .load(new File(getDataFolder(), "config.yml"));
+            return ConfigurationProvider.getProvider(YamlConfiguration.class)
+                    .load(new File(Main.plugin.getDataFolder(), filename));
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        Main.serverController = new ServerController();
+        return null;
+    }
 
-        // Register events
-        getProxy().getPluginManager().registerListener(this, new Events(this));
-
-        // Register commands
-        getProxy().getPluginManager().registerCommand(this, new ServerReport());
-
-        // Reload config command
-        getProxy().getPluginManager().registerCommand(this, new ReloadConfig());
+    /**
+     * Reload the configuration variables
+     */
+    public static void reloadConfig() {
+        serverController.stopDelay = Main.config.getInt("stop_delay");
+        serverController.maxServers = Main.config.getInt("max_servers");
     }
 
     // TODO: Close Minecraft server on Proxy stop

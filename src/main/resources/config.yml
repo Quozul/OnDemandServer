@@ -1,21 +1,3 @@
-# Message send to a player trying to switch to a stopped server
-redirect_message: 'Server is starting, you''ll be automatically redirected.'
-
-# Message to send when a non-connected player tries to connect to a non-started server
-kick_message: 'Server is starting, retry in a few seconds.'
-
-# Message displayed when a player wants to start a server, printing estimated time remaining, must include %f
-estimated_startup: 'Estimated time for startup %.2fs.'
-
-# Message displayed once a server has started, must include %f
-startup_time: 'Server started in %.2fs. Redirecting...'
-
-# Message displayed when a player tries to execute a command he's not allowed to
-no_permission: 'You do not have permission to use this command.'
-
-# Message displayed when a server fail to start
-start_failed: 'Sorry, the server you requested could not be started.'
-
 # Delay before the servers stops in minutes
 stop_delay: 1
 
@@ -27,28 +9,27 @@ stop_command: "stop\n"  # For the \n to work, must be between quotes ""
 # Amount of servers that the plugin can start
 # Set to <= 0 for no limit
 max_servers: 1
-# Message sent when a player tries to connect when there are already too many servers running
-too_many_running: "Too much servers are already running!"
 
+# Enable HTTP server to manage the servers
+# Set to <= 0 to disable
+http_port: -1
+
+# Syntax: [server name]: [command to start the server]
 servers:
-  # This is an example for a server hosted on the same Windows machine under the port 25564
-  - address: '/127.0.0.1:25564'
-    command: 'cmd /k cd "C:\Servers\test" && start.bat'
+  # This is an example for a server named "lobby" hosted on the same Windows machine as the proxy
+  lobby: 'cmd /k cd "C:\Servers\test" && start.bat'
     # The start.bat file:
 
     # java -jar -Xmx8G paper.jar nogui
 
   # Second example on Windows
-  - address: '/127.0.0.1:25563'
-    command: '"C:\Servers\test\start.bat"'
+  test1: '"C:\Servers\test\start.bat"'
     # The start.bat file:
 
     # cd "%~dp0" && java -Xmx8G -jar -DIReallyKnowWhatIAmDoingISwear paper.jar nogui
 
   # Example on Linux
-  - address: 'localhost/127.0.0.1:25562'
-    command: 'sh /Servers/test/start.sh' # The path must be an absolute path
-
+  test2: 'sh /Servers/test/start.sh' # The path must be an absolute path
     # The script.sh must contain a cd command to the location of the server
     # Shell script example:
 

@@ -1,21 +1,19 @@
 package dev.quozul.OnDemandServer;
 
+import dev.quozul.OnDemandServer.enums.ServerStatus;
+import dev.quozul.OnDemandServer.enums.StartingStatus;
+import dev.quozul.OnDemandServer.events.ServerStartFailEvent;
+import dev.quozul.OnDemandServer.events.ServerStartedEvent;
+import dev.quozul.OnDemandServer.events.ServerStoppedEvent;
 import net.md_5.bungee.api.Callback;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.ServerConnectRequest;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
-import net.md_5.bungee.api.connection.Server;
 import net.md_5.bungee.api.event.*;
 import net.md_5.bungee.api.plugin.Listener;
-import net.md_5.bungee.api.scheduler.ScheduledTask;
 import net.md_5.bungee.event.EventHandler;
-
-
-import java.net.SocketAddress;
-import java.util.Arrays;
-import java.util.HashMap;
 
 import static dev.quozul.OnDemandServer.Main.serverController;
 
@@ -24,21 +22,14 @@ public class Events implements Listener {
     // TODO: Start default server on ping
     // TODO: Display time remaining for server to start in MOTD per player
 
-    private final Main plugin;
-    private final HashMap<ProxiedPlayer, ScheduledTask> tasks;
-
-    Events(Main pl) {
-        this.plugin = pl;
-        this.tasks = new HashMap<>();
-    }
-
     @EventHandler
     public void onServerConnect(ServerConnectEvent e) {
         ServerInfo target = e.getTarget();
+        ServerOnDemand server = serverController.getServer(target);
 
-
-        if (serverController.isServerStarted(target)) {
-            System.out.println("Connecting to " + target.getName() + "...");
+        if (server.getStatus() == ServerStatus.STARTED || server.getStatus() == ServerStatus.EMPTY) {
+            // Server is currently running
+            System.out.println("Connecting to " + server.getName() + "...");
 
             // If the server is not responding (ie. it crashed), fix it (remove it from list and restart it)
             // TODO: Handle JOIN_PROXY
@@ -48,15 +39,15 @@ public class Events implements Listener {
                 ServerConnectRequest.Builder builder = ServerConnectRequest.builder()
                         .retry(false)
                         .reason(ServerConnectEvent.Reason.PLUGIN)
-                        .target(e.getTarget())
+                        .target(target)
                         .connectTimeout(e.getRequest().getConnectTimeout())
                         .callback(new Callback<ServerConnectRequest.Result>() {
                             @Override
                             public void done(ServerConnectRequest.Result result, Throwable error) {
                                 if (result == ServerConnectRequest.Result.FAIL) {
-                                    boolean serverRemoved = serverController.safelyRemoveFromList(e.getTarget());
+                                    boolean serverRemoved = server.safelyRemove();
                                     if (serverRemoved) {
-                                        e.getPlayer().connect(e.getTarget()); // Reconnecting to start the server
+                                        e.getPlayer().connect(target); // Reconnecting to start the server
                                     }
                                 }
                             }
@@ -64,28 +55,30 @@ public class Events implements Listener {
                 e.getPlayer().connect(builder.build());
             }
 
-        } else if (serverController.canBeControlled.apply(target)) {
-            long time = serverController.getAverageStartingTime(target);
+            e.getRequest().setRetry(false);
+        } else if (server.getStatus() != ServerStatus.STANDALONE) {
+            // Server can be controlled by plugin
+            long time = server.getAverageStartingTime();
 
             // Timeout is 2 times the expected time to start
-            char isStarting = serverController.startServer(target, e.getPlayer(), time * 2);
+            StartingStatus isStarting = server.startServer(e.getPlayer(), time * 2);
             TextComponent message = new TextComponent();
 
             switch (isStarting) {
-                case 0:
-                    System.out.println("Starting server " + target.getName() + "...");
+                case STARTING:
+                    System.out.println("Starting server " + server.getName() + "...");
 
                     // If player is already connected
                     if (e.getPlayer().getServer() != null) {
                         // Display an estimated time for the server's startup time
-                        message.setText(Main.configuration.getString("redirect_message"));
+                        message.setText(Main.messages.getString("redirect_message"));
                         e.getPlayer().sendMessage(message);
 
-                        TextComponent text = new TextComponent(String.format(Main.configuration.getString("estimated_startup"), time / 1000.));
+                        TextComponent text = new TextComponent(String.format(Main.messages.getString("estimated_startup"), time / 1000.));
                         e.getPlayer().sendMessage(ChatMessageType.CHAT, text);
                     } else {
                         // If plays is connecting, kick player
-                        message.setText(Main.configuration.getString("kick_message"));
+                        message.setText(Main.messages.getString("kick_message"));
                         // TODO: Handle when the network has fallback servers
                         e.getPlayer().disconnect(message);
                         e.setCancelled(true);
@@ -93,16 +86,24 @@ public class Events implements Listener {
 
                     break;
 
-                case 1:
+                case TOO_MUCH_RUNNING:
                     System.out.println("Too much servers are already running!");
-                    message.setText(Main.configuration.getString("too_many_running"));
+                    message.setText(Main.messages.getString("too_many_running"));
 
                     if (e.getPlayer().isConnected()) e.getPlayer().sendMessage(message);
                     else e.getPlayer().disconnect(message);
 
                     break;
 
-                default:
+                case ALREADY_STARTING:
+                    message.setText(Main.messages.getString("already_starting"));
+
+                    if (e.getPlayer().isConnected()) e.getPlayer().sendMessage(message);
+                    else e.getPlayer().disconnect(message);
+
+                    break;
+
+                case UNKNOWN:
                     System.out.println("Something went wrong when starting the server!");
                     message.setText("Something went wrong when starting the server!");
 
@@ -115,67 +116,80 @@ public class Events implements Listener {
 
             e.getRequest().setRetry(false);
             e.setCancelled(true);
-        } else {
-            System.out.println("Plugin is not handling connection.");
         }
     }
 
     @EventHandler
     public void onServerConnected(ServerConnectedEvent e) {
-        ServerInfo target = e.getServer().getInfo();
-        // Clear server shutdown tasks when player connects to server
-        serverController.clearStopTask(target);
+        ServerOnDemand server = serverController.getServer(e.getServer().getInfo());
 
-        if (serverController.canBeControlled.apply(target) && !serverController.isControlledByProxy(target)) {
+        if (server.getStatus() == ServerStatus.DETACHED) {
+
             TextComponent textComponent = new TextComponent("This server is not controlled by the proxy, please inform the server administrator.");
             e.getPlayer().sendMessage(textComponent);
+
+        } else if (server.getStatus() != ServerStatus.STANDALONE) {
+
+            // Clear server shutdown tasks when player connects to server
+            server.clearStopTask();
+            server.setStatus(ServerStatus.STARTED);
+
         }
     }
 
     @EventHandler
     public void onServerDisconnect(ServerDisconnectEvent e) {
-        ServerInfo target = e.getTarget();
+        ServerOnDemand server = serverController.getServer(e.getTarget());
 
         // If server was started by the proxy
-        if (serverController.canBeControlled.apply(target)) {
+        if (server != null && server.getStatus() != ServerStatus.STANDALONE && server.getStatus() != ServerStatus.DETACHED) {
             // TODO: Check if server is still responding, if not, remove it from list (ie. admin stopped the server)
-            serverController.requestServerStop(target);
+            server.requestServerStop();
         }
     }
 
     @EventHandler
     public void onServerStarted(ServerStartedEvent e) {
-        ServerInfo serverInfo = e.getServerInfo();
-        SocketAddress address = serverInfo.getSocketAddress();
         long time = e.getPing().getTimeTook();
-        // TODO: Handle when several players try to start the same server
-        ProxiedPlayer player = serverController.getStartedBy().get(address);
+
+        e.getServer().setLastStartup(System.currentTimeMillis());
 
         // Save time took for the server to start
-        serverController.addStartingTime(serverInfo, time);
+        e.getServer().addStartingTime(time);
 
-        System.out.println("Server " + address.toString() + " requested by " + player.getName() + " started in " + time / 1000 + "s");
-        player.sendMessage(new TextComponent(String.format(Main.configuration.getString("startup_time"), time / 1000.)));
+        e.getServer().setStatus(ServerStatus.STARTED);
 
-        // Move player to started server
-        // TODO: Handle when player is no longer connected (ie. stop the server)
-        if (player.isConnected()) {
-            player.connect(e.getServerInfo());
+        ProxiedPlayer player = e.getServer().getRequester();
+
+        if (player != null && player.isConnected()) {
+            System.out.println("Server " + e.getServer().getName() + " requested by " + player.getName() + " started in " + time / 1000 + "s");
+            player.sendMessage(new TextComponent(String.format(Main.messages.getString("startup_time"), time / 1000.)));
+
+            // Move player to started server
+            // Handle when player is no longer connected (ie. stop the server)
+            player.connect(e.getServer().getServerInfo());
         }
 
-        serverController.createStopTask(serverInfo);
+        e.getServer().createStopTask();
+
+        serverController.saveStartingTimes();
     }
 
     @EventHandler
     public void onServerStartFailed(ServerStartFailEvent e) {
-        ServerInfo serverInfo = e.getServerInfo();
-        SocketAddress address = serverInfo.getSocketAddress();
         long time = e.getPing().getTimeTook();
-        ProxiedPlayer player = serverController.getStartedBy().get(address);
+        ProxiedPlayer player = e.getServer().getRequester();
 
-        System.out.println("Server " + address.toString() + " requested by " + player.getName() + " failed in " + time / 1000 + "s");
-        player.sendMessage(new TextComponent(Main.configuration.getString("start_failed")));
+        e.getServer().setStatus(ServerStatus.STOPPED);
 
-        serverController.safelyRemoveFromList(serverInfo);
+        System.out.println("Server " + e.getServer().getName() + " requested by " + player.getName() + " failed in " + time / 1000 + "s");
+        player.sendMessage(new TextComponent(Main.messages.getString("start_failed")));
+
+        e.getServer().safelyRemove();
+    }
+
+    @EventHandler
+    public void onServerStop(ServerStoppedEvent e) {
+        e.getServer().setLastStop(System.currentTimeMillis());
     }
 }
