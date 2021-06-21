@@ -2,20 +2,17 @@ package dev.quozul.OnDemandServer;
 
 import dev.quozul.OnDemandServer.enums.ServerStatus;
 import net.md_5.bungee.api.ProxyServer;
-import net.md_5.bungee.api.config.ConfigurationAdapter;
-import net.md_5.bungee.api.config.ListenerInfo;
 import net.md_5.bungee.api.config.ServerInfo;
+import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.config.Configuration;
+import net.md_5.bungee.config.ConfigurationProvider;
+import net.md_5.bungee.config.YamlConfiguration;
 
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 public class ServerController {
     /**
@@ -42,6 +39,15 @@ public class ServerController {
     public int maxPort;
 
     ServerController() {
+        // Load configuration
+        stopDelay = Main.config.getInt("stop_delay");
+        maxServers = Main.config.getInt("max_servers");
+
+        String[] portRange = Main.config.getString("port_range").split("-");
+        minPort = Integer.parseInt(portRange[0]);
+        maxPort = Integer.parseInt(portRange[1]);
+
+        // Load starting times
         File file = new File(Main.plugin.getDataFolder(), "startingTime.ser");
         HashMap<String, List<Long>> startingTime;
 
@@ -57,6 +63,7 @@ public class ServerController {
         Configuration serverConfig = Main.config.getSection("servers");
         this.servers = new HashMap<>();
 
+        // Load on demand servers
         for (Map.Entry<String, ServerInfo> entry : servers.entrySet()) {
             String name = entry.getKey();
             ServerInfo serverInfo = entry.getValue();
@@ -98,6 +105,12 @@ public class ServerController {
                 server.setStatus(ServerStatus.STOPPED);
             } else {
                 server.setStatus(ServerStatus.UNKNOWN);
+            }
+        }
+
+        if (Main.config.getBoolean("allow_server_on_the_fly")) {
+            for (String key : Main.onTheFly.getKeys()) {
+                loadOnTheFlyServer(Main.onTheFly.getString(key), key);
             }
         }
 
@@ -185,7 +198,7 @@ public class ServerController {
         if (!destinationDirectory.exists()) {
             destinationDirectory.mkdir();
         }
-        for (String f : sourceDirectory.list()) {
+        for (String f : Objects.requireNonNull(sourceDirectory.list())) {
             copyDirectoryCompatibityMode(new File(sourceDirectory, f), new File(destinationDirectory, f));
         }
     }
@@ -209,15 +222,12 @@ public class ServerController {
         }
     }
 
-    /**
-     * Creates a new server
-     * @param name Server's name
-     * @param template Template to use for the new server
-     */
-    public void createServer(String name, File template) {
+    public void loadOnTheFlyServer(Configuration config, String name) {
         int port;
         // Find an available port in range
-        for (port = minPort; port < maxPort; port++) if (isAvailable(port)) break;
+        for (port = minPort; port < maxPort; port++) {
+            if (isAvailable(port)) break;
+        }
 
         if (port <= 0) throw new RuntimeException("No available port found in range");
 
@@ -231,19 +241,41 @@ public class ServerController {
         ServerInfo serverInfo = proxy.constructServerInfo(name, address, motd, restricted);
         proxy.getServers().put(name, serverInfo);
 
+        // Add server to plugin's configuration
+        OnTheFlyServer server = new OnTheFlyServer(name, config, serverInfo, port, config.getString("owner"));
+        this.servers.put(serverInfo, server);
+
+        server.setStatus(ServerStatus.STOPPED);
+
+        // TODO: Add forced host
+    }
+
+    /**
+     * Load a new server on the fly and add it to bungee configuration
+     */
+    public void loadOnTheFlyServer(String owner, String name) {
         // Create configuration
         Configuration configuration = new Configuration();
         configuration.set("directory", Main.config.getString("server_folder") + File.separator + name);
         configuration.set("IReallyKnowWhatIAmDoingISwear", true);
         configuration.set("jar_file", "spigot.jar");
         configuration.set("maximum_memory", 8192);
+        configuration.set("owner", owner);
 
-        // Add server to plugin's configuration
-        ServerOnDemand server = new ServerOnDemand(name, configuration, serverInfo, port);
-        this.servers.put(serverInfo, server);
+        loadOnTheFlyServer(configuration, name);
+    }
 
-        server.setStatus(ServerStatus.STOPPED);
+    public void createServer(ProxiedPlayer owner, File template) {
+        String name = owner.getDisplayName().toLowerCase();
+        createServer(owner, template, name);
+    }
 
+    /**
+     * Creates a new server
+     * @param owner Server's owner
+     * @param template Template to use for the new server
+     */
+    public void createServer(ProxiedPlayer owner, File template, String name) {
         // Copy template folder
         String destinationDirectoryLocation = Main.config.getString("server_folder") + File.separator + name;
         File destinationDirectory = new File(destinationDirectoryLocation);
@@ -254,7 +286,24 @@ public class ServerController {
             e.printStackTrace();
         }
 
-        // TODO: Add forced host
+        loadOnTheFlyServer(owner.getUniqueId().toString(), name);
+
+        saveOnTheFlyServers();
+    }
+
+    public void saveOnTheFlyServers() {
+        for (Map.Entry<ServerInfo, ServerOnDemand> entry : servers.entrySet()) {
+            ServerOnDemand server = entry.getValue();
+            if (!(server instanceof OnTheFlyServer)) continue;
+            Main.onTheFly.set(server.getName(), server.getConfiguration());
+
+            try {
+                ConfigurationProvider.getProvider(YamlConfiguration.class)
+                        .save(Main.onTheFly, new File(Main.plugin.getDataFolder(), "on_the_fly.yml"));
+            } catch (IOException e) {
+                e.printStackTrace();;
+            }
+        }
     }
 
     public HashMap<ServerInfo, ServerOnDemand> getServers() {

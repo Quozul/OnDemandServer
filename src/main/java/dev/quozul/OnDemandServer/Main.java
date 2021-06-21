@@ -15,8 +15,7 @@ import java.nio.file.Files;
 
 public class Main extends Plugin {
     public static Plugin plugin;
-    public static Configuration config;
-    public static Configuration messages;
+    public static Configuration config, messages, onTheFly;
     public static ServerController serverController;
 
     @Override
@@ -31,10 +30,6 @@ public class Main extends Plugin {
         Main.config = loadConfigFile("config.yml");
         Main.messages = loadConfigFile("messages.yml");
 
-        Main.serverController = new ServerController();
-
-        reloadConfig();
-
         // Register events
         getProxy().getPluginManager().registerListener(this, new Events());
 
@@ -44,7 +39,11 @@ public class Main extends Plugin {
 
         if (Main.config.getBoolean("allow_server_on_the_fly")) {
             getProxy().getPluginManager().registerCommand(this, new CreateServer());
+            Main.onTheFly = loadConfigFile("on_the_fly.yml");
         }
+
+        Main.serverController = new ServerController();
+        reloadConfig();
 
         int port = Main.config.getInt("http_port");
         if (port > 0) {

@@ -27,7 +27,7 @@ public class CreateServer extends Command implements TabExecutor {
             try {
                 File template = new File(Main.config.getString("templates") + File.separator + strings[0]);
 
-                Main.serverController.createServer(p.getDisplayName().toLowerCase(), template);
+                Main.serverController.createServer(p, template);
                 p.sendMessage(new TextComponent("Server created!"));
             } catch (RuntimeException e) {
                 p.sendMessage(new TextComponent(e.getMessage()));

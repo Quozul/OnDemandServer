@@ -23,19 +23,20 @@ import static dev.quozul.OnDemandServer.Main.serverController;
  * Represents a server that can be controlled by the plugin
  */
 public class ServerOnDemand {
-    private final String name;
-    private final ServerInfo serverInfo;
-    private final SocketAddress address;
+    protected final String name;
+    protected final ServerInfo serverInfo;
+    protected final SocketAddress address;
 
-    private int port;
-    private long lastStop;
-    private Process process;
-    private long lastStartup;
-    private ServerStatus status;
-    private ScheduledTask stopTask;
-    private ProcessBuilder builder;
-    private ProxiedPlayer requester;
-    private List<Long> startingTimes;
+    protected int port;
+    protected long lastStop;
+    protected Process process;
+    protected long lastStartup;
+    protected ServerStatus status;
+    protected Configuration config;
+    protected ScheduledTask stopTask;
+    protected ProcessBuilder builder;
+    protected ProxiedPlayer requester;
+    protected List<Long> startingTimes;
 
     public ServerOnDemand(String name, ServerInfo serverInfo) {
         this.name = name;
@@ -54,6 +55,8 @@ public class ServerOnDemand {
     public ServerOnDemand(String name, Configuration config, ServerInfo serverInfo) {
         this(name, serverInfo);
 
+        this.config = config;
+
         if (!config.contains("directory")) {
             throw new RuntimeException("Invalid configuration, missing directory path");
         } else if (!config.contains("jar_file")) {
@@ -70,16 +73,7 @@ public class ServerOnDemand {
         builder.command(arguments);
     }
 
-    public ServerOnDemand(String name, Configuration config, ServerInfo serverInfo, int port) {
-        this(name, config, serverInfo);
-        this.port = port;
-
-        List<String> arguments = buildCommand(config);
-
-        builder.command(arguments);
-    }
-
-    private List<String> buildCommand(Configuration config) {
+    protected List<String> buildCommand(Configuration config) {
         List<String> arguments = new ArrayList<>();
         // java -Xmx8G -Xms2G -jar -DIReallyKnowWhatIAmDoingISwear paper.jar nogui
         arguments.add("java");
@@ -299,5 +293,9 @@ public class ServerOnDemand {
 
     public void setLastStartup(long lastStartup) {
         this.lastStartup = lastStartup;
+    }
+
+    public Configuration getConfiguration() {
+        return this.config;
     }
 }
