@@ -110,7 +110,7 @@ public class ServerController {
 
         if (Main.config.getBoolean("allow_server_on_the_fly")) {
             for (String key : Main.onTheFly.getKeys()) {
-                loadOnTheFlyServer(Main.onTheFly.getSection(key), key);
+                loadOnTheFlyServer(key, Main.onTheFly.getSection(key));
             }
         }
 
@@ -222,11 +222,18 @@ public class ServerController {
         }
     }
 
-    public void loadOnTheFlyServer(Configuration config, String name) {
+    public void loadOnTheFlyServer(String name, Configuration config) {
         int port;
         // Find an available port in range
         for (port = minPort; port < maxPort; port++) {
-            if (isAvailable(port)) break;
+            boolean used = false;
+            for (Map.Entry<ServerInfo, ServerOnDemand> entry : this.servers.entrySet()) {
+                if (entry.getValue().port == port) {
+                    used = true;
+                    break;
+                }
+            }
+            if (!used) break;
         }
 
         if (port <= 0) throw new RuntimeException("No available port found in range");
@@ -263,22 +270,20 @@ public class ServerController {
         configuration.set("owner", owner);
         configuration.set("template", templateName);
 
-        loadOnTheFlyServer(configuration, name);
+        loadOnTheFlyServer(name, configuration);
     }
 
     public void createServer(ProxiedPlayer owner, File template) {
-        String name = owner.getDisplayName().toLowerCase();
-        createServer(owner, template, name);
+        createServer(template, owner.getDisplayName().toLowerCase(), owner.getUniqueId().toString());
     }
 
     /**
      * Creates a new server
-     * @param owner Server's owner
      * @param template Template to use for the new server
      */
-    public void createServer(ProxiedPlayer owner, File template, String name) {
+    public void createServer(File template, String name, String uuid) {
         // Copy template folder
-        String destinationDirectoryLocation = Main.config.getString("server_folder") + File.separator + name;
+        String destinationDirectoryLocation = Main.config.getString("server_folder") + File.separator + uuid;
         File destinationDirectory = new File(destinationDirectoryLocation);
 
         try {
@@ -287,7 +292,7 @@ public class ServerController {
             e.printStackTrace();
         }
 
-        loadOnTheFlyServer(owner.getUniqueId().toString(), name, template.getName());
+        loadOnTheFlyServer(uuid, name, template.getName());
 
         saveOnTheFlyServers();
     }
