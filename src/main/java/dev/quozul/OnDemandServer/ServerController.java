@@ -110,7 +110,7 @@ public class ServerController {
 
         if (Main.config.getBoolean("allow_server_on_the_fly")) {
             for (String key : Main.onTheFly.getKeys()) {
-                loadOnTheFlyServer(Main.onTheFly.getString(key), key);
+                loadOnTheFlyServer(Main.onTheFly.getSection(key), key);
             }
         }
 
@@ -253,7 +253,7 @@ public class ServerController {
     /**
      * Load a new server on the fly and add it to bungee configuration
      */
-    public void loadOnTheFlyServer(String owner, String name) {
+    public void loadOnTheFlyServer(String owner, String name, String templateName) {
         // Create configuration
         Configuration configuration = new Configuration();
         configuration.set("directory", Main.config.getString("server_folder") + File.separator + name);
@@ -261,6 +261,7 @@ public class ServerController {
         configuration.set("jar_file", "spigot.jar");
         configuration.set("maximum_memory", 8192);
         configuration.set("owner", owner);
+        configuration.set("template", templateName);
 
         loadOnTheFlyServer(configuration, name);
     }
@@ -286,7 +287,7 @@ public class ServerController {
             e.printStackTrace();
         }
 
-        loadOnTheFlyServer(owner.getUniqueId().toString(), name);
+        loadOnTheFlyServer(owner.getUniqueId().toString(), name, template.getName());
 
         saveOnTheFlyServers();
     }
