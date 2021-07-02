@@ -1,5 +1,6 @@
 package dev.quozul.OnDemandServer;
 
+import com.google.common.collect.Lists;
 import dev.quozul.OnDemandServer.enums.ServerStatus;
 import dev.quozul.OnDemandServer.enums.StartingStatus;
 import net.md_5.bungee.api.ProxyServer;
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -37,6 +39,8 @@ public class ServerOnDemand {
     protected ProcessBuilder builder;
     protected ProxiedPlayer requester;
     protected List<Long> startingTimes;
+
+    public static final int MAX_STARTING_TIMES = 3;
 
     public ServerOnDemand(String name, ServerInfo serverInfo) {
         this.name = name;
@@ -83,8 +87,9 @@ public class ServerOnDemand {
             arguments.add("-Xmx" + config.getInt("maximum_memory") + "M");
         if (config.contains("minimum_memory"))
             arguments.add("-Xms" + config.getInt("minimum_memory") + "M");
-        if (config.contains("jvm_arguments"))
-            arguments.add(config.getString("jvm_arguments"));
+        if (config.contains("jvm_arguments")) {
+            arguments.addAll(Arrays.asList(config.getString("jvm_arguments").split(" ")));
+        }
 
         arguments.add("-jar");
 
@@ -101,6 +106,23 @@ public class ServerOnDemand {
         arguments.add("nogui");
 
         return arguments;
+    }
+
+    public ServerStatus updateStatus() {
+        boolean serverStarted = serverController.isServerStarted(serverInfo);
+        boolean hasConfig = config != null;
+
+        if (serverStarted && hasConfig) {
+            status = ServerStatus.DETACHED;
+        } else if (serverStarted) {
+            status = ServerStatus.STANDALONE;
+        } else if (hasConfig) {
+            status = ServerStatus.STOPPED;
+        } else {
+            status = ServerStatus.UNKNOWN;
+        }
+
+        return status;
     }
 
     /**

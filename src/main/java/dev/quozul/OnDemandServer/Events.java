@@ -34,8 +34,8 @@ public class Events implements Listener {
             System.out.println("Connecting to " + server.getName() + "...");
 
             // If the server is not responding (ie. it crashed), fix it (remove it from list and restart it)
-            // TODO: Handle JOIN_PROXY
-            if (e.getReason() == ServerConnectEvent.Reason.COMMAND) {
+            if (e.getReason() == ServerConnectEvent.Reason.COMMAND || e.getReason() == ServerConnectEvent.Reason.JOIN_PROXY) {
+                // FIXME: Cancelled ServerConnectEvent with no server or disconnect. Happens on JOIN_PROXY.
                 e.setCancelled(true);
 
                 ServerConnectRequest.Builder builder = ServerConnectRequest.builder()
@@ -43,14 +43,11 @@ public class Events implements Listener {
                         .reason(ServerConnectEvent.Reason.PLUGIN)
                         .target(target)
                         .connectTimeout(e.getRequest().getConnectTimeout())
-                        .callback(new Callback<ServerConnectRequest.Result>() {
-                            @Override
-                            public void done(ServerConnectRequest.Result result, Throwable error) {
-                                if (result == ServerConnectRequest.Result.FAIL) {
-                                    boolean serverRemoved = server.safelyRemove();
-                                    if (serverRemoved) {
-                                        e.getPlayer().connect(target); // Reconnecting to start the server
-                                    }
+                        .callback((result, error) -> {
+                            if (result == ServerConnectRequest.Result.FAIL) {
+                                boolean serverRemoved = server.safelyRemove();
+                                if (serverRemoved) {
+                                    e.getPlayer().connect(target); // Reconnecting to start the server
                                 }
                             }
                         });
@@ -66,24 +63,24 @@ public class Events implements Listener {
             StartingStatus isStarting = server.startServer(e.getPlayer(), time * 2);
             TextComponent message = new TextComponent();
 
+            boolean isConnected = e.getPlayer().getServer() != null;
+
             switch (isStarting) {
                 case STARTING:
                     System.out.println("Starting server " + server.getName() + "...");
 
                     // If player is already connected
-                    if (e.getPlayer().getServer() != null) {
+                    if (isConnected) {
                         // Display an estimated time for the server's startup time
                         message.setText(Main.messages.getString("redirect_message"));
                         e.getPlayer().sendMessage(message);
 
+                        // Print estimated startup time
                         TextComponent text = new TextComponent(String.format(Main.messages.getString("estimated_startup"), time / 1000.));
                         e.getPlayer().sendMessage(ChatMessageType.CHAT, text);
                     } else {
-                        // If plays is connecting, kick player
+                        // If player is connecting, kick player
                         message.setText(Main.messages.getString("kick_message"));
-                        // TODO: Handle when the network has fallback servers
-                        e.getPlayer().disconnect(message);
-                        e.setCancelled(true);
                     }
 
                     break;
@@ -92,16 +89,14 @@ public class Events implements Listener {
                     System.out.println("Too much servers are already running!");
                     message.setText(Main.messages.getString("too_many_running"));
 
-                    if (e.getPlayer().isConnected()) e.getPlayer().sendMessage(message);
-                    else e.getPlayer().disconnect(message);
+                    if (isConnected) e.getPlayer().sendMessage(message);
 
                     break;
 
                 case ALREADY_STARTING:
                     message.setText(Main.messages.getString("already_starting"));
 
-                    if (e.getPlayer().isConnected()) e.getPlayer().sendMessage(message);
-                    else e.getPlayer().disconnect(message);
+                    if (isConnected) e.getPlayer().sendMessage(message);
 
                     break;
 
@@ -109,19 +104,32 @@ public class Events implements Listener {
                     Main.plugin.getLogger().log(Level.SEVERE, "Something went wrong when starting the server!");
                     message.setText("Something went wrong when starting the server!");
 
-                    if (e.getPlayer().isConnected()) e.getPlayer().sendMessage(message);
-                    else e.getPlayer().disconnect(message);
+                    if (isConnected) e.getPlayer().sendMessage(message);
 
                     break;
 
             }
 
+            // TODO: Handle when the network has fallback servers
+            if (!isConnected) {
+                e.getPlayer().disconnect(message);
+            }
             e.getRequest().setRetry(false);
             e.setCancelled(true);
         } else if (server.getStatus() == ServerStatus.UNKNOWN) {
-            e.getPlayer().sendMessage(new TextComponent("Sorry, something weird happened."));
-            e.getRequest().setRetry(false);
-            e.setCancelled(true);
+            ServerStatus status = server.updateStatus();
+            if (status == ServerStatus.UNKNOWN) {
+                TextComponent message = new TextComponent("Sorry, something weird happened.");
+
+                e.getRequest().setRetry(false);
+
+                if (e.getPlayer().isConnected()) {
+                    e.getPlayer().sendMessage(message);
+                } else {
+                    e.getPlayer().disconnect(message);
+                    e.setCancelled(true);
+                }
+            }
         }
     }
 

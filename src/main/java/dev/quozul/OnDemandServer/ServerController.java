@@ -94,18 +94,6 @@ public class ServerController {
             if (startingTime.containsKey(name)) {
                 server.setStartingTimes(startingTime.get(name));
             }
-
-            boolean serverStarted = isServerStarted(serverInfo);
-
-            if (serverStarted && inConfig) {
-                server.setStatus(ServerStatus.DETACHED);
-            } else if (serverStarted) {
-                server.setStatus(ServerStatus.STANDALONE);
-            } else if (inConfig) {
-                server.setStatus(ServerStatus.STOPPED);
-            } else {
-                server.setStatus(ServerStatus.UNKNOWN);
-            }
         }
 
         if (Main.config.getBoolean("allow_server_on_the_fly")) {
@@ -126,6 +114,19 @@ public class ServerController {
         }
     }
 
+    /**
+     * Update all servers' statuses
+     */
+    public void updateStatus() {
+        for (Map.Entry<ServerInfo, ServerOnDemand> entry : servers.entrySet()) {
+            entry.getValue().updateStatus();
+        }
+    }
+
+    /**
+     * Get amount of running servers
+     * @return Amount of currently running servers
+     */
     public int getRunningServers() {
         int sum = 0;
         for (Map.Entry<ServerInfo, ServerOnDemand> entry : servers.entrySet()) {

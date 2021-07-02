@@ -34,7 +34,12 @@ public class Ping {
     private void ping() {
         // Ping timeout
         if (!server.getProcess().isAlive() || this.end - this.start > timeout) {
-            Main.plugin.getLogger().log(Level.WARNING, "Maximum ping tries reached, aborting.");
+            if (!server.getProcess().isAlive()) {
+                Main.plugin.getLogger().log(Level.WARNING, "Process not responding, aborting.");
+            } else {
+                Main.plugin.getLogger().log(Level.WARNING, "Maximum ping tries reached, aborting.");
+            }
+
             ProxyServer.getInstance().getPluginManager().callEvent(new ServerStartFailEvent(server, this));
             server.safelyRemove();
             return;

@@ -44,6 +44,7 @@ public class Main extends Plugin {
 
         Main.serverController = new ServerController();
         reloadConfig();
+        Main.serverController.updateStatus();
 
         int port = Main.config.getInt("http_port");
         if (port > 0) {
