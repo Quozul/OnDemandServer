@@ -34,7 +34,9 @@ public class Events implements Listener {
             System.out.println("Connecting to " + server.getName() + "...");
 
             // If the server is not responding (ie. it crashed), fix it (remove it from list and restart it)
-            if (e.getReason() == ServerConnectEvent.Reason.COMMAND || e.getReason() == ServerConnectEvent.Reason.JOIN_PROXY) {
+            if (e.getReason() == ServerConnectEvent.Reason.COMMAND || // When using /server <server name>
+                    e.getReason() == ServerConnectEvent.Reason.JOIN_PROXY || // When joining the proxy
+                    e.getReason() == ServerConnectEvent.Reason.PLUGIN_MESSAGE) { // Reason used by ChestCommands
                 // FIXME: Cancelled ServerConnectEvent with no server or disconnect. Happens on JOIN_PROXY.
                 e.setCancelled(true);
 
