@@ -148,7 +148,7 @@ public class ServerController {
     /**
      * Get a server by name
      * @param name Server object
-     * @return The server
+     * @return The server or null if not found
      */
     public ServerOnDemand findServerByName(String name) {
         for (Map.Entry<ServerInfo, ServerOnDemand> entry : servers.entrySet()) {
@@ -158,6 +158,26 @@ public class ServerController {
             }
         }
         return null;
+    }
+
+    /**
+     * Get a server from its owner's uuid
+     * @param uuid UUID of the owner
+     * @return The server or null if not found
+     */
+    public List<OnTheFlyServer> findServersByOwner(String uuid) {
+        List<OnTheFlyServer> s = new ArrayList<>();
+
+        for (Map.Entry<ServerInfo, ServerOnDemand> entry : servers.entrySet()) {
+            if (!(entry.getValue() instanceof OnTheFlyServer)) continue;
+
+            OnTheFlyServer server = (OnTheFlyServer) entry.getValue();
+            if (server.getOwner().equals(uuid)) {
+                s.add(server);
+            }
+        }
+
+        return s;
     }
 
     /**

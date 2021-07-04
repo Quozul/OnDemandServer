@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>OnDemandServer - Home</title>
+    <style>
+        pre { display: inline; }
+    </style>
+</head>
+<body>
+<h1>OnDemandServer API</h1>
+<p>Welcome to the home page of the OnDemandServer proxy plugin. Here you will find the different endpoints the API has.</p>
+<h2>Endpoints</h2>
+<ul>
+    <li><pre>/</pre> : this page</li>
+    <li><a href="/status"><pre>/status/:?name</pre></a> : status of all servers or the given name</li>
+    <li><pre>/start/:name</pre> : starts the server with the given name</li>
+    <li><pre>/stop/:name</pre> : stops the server with the given name</li>
+    <li><pre>/user/:uuid</pre> : get all on-the-fly created servers by a user</li>
+</ul>
+</body>
+</html>

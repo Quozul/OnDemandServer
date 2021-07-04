@@ -1,7 +1,6 @@
 package dev.quozul.OnDemandServer;
 
 import net.md_5.bungee.api.config.ServerInfo;
-import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.config.Configuration;
 
 import java.io.Serializable;
@@ -20,6 +19,10 @@ public class OnTheFlyServer extends ServerOnDemand implements Serializable {
         builder.command(arguments);
     }
 
+    /**
+     * Get server owner's uuid
+     * @return Owner's UUID
+     */
     public String getOwner() {
         return owner;
     }

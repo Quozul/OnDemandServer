@@ -5,7 +5,6 @@ import dev.quozul.OnDemandServer.enums.StartingStatus;
 import dev.quozul.OnDemandServer.events.ServerStartFailEvent;
 import dev.quozul.OnDemandServer.events.ServerStartedEvent;
 import dev.quozul.OnDemandServer.events.ServerStoppedEvent;
-import net.md_5.bungee.api.Callback;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.ServerConnectRequest;
 import net.md_5.bungee.api.chat.TextComponent;
