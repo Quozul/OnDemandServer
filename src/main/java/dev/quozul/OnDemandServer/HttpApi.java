@@ -9,12 +9,12 @@ import dev.quozul.OnDemandServer.enums.ServerStatus;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.config.Configuration;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -26,7 +26,10 @@ public class HttpApi {
         server.createContext("/start", new StartServer()); // Starts a server
         server.createContext("/stop", new StopServer()); // Stops a server
         server.createContext("/user", new OnTheFly()); // Get status for a user created servers
-        server.setExecutor(null); // creates a default executor
+        server.createContext("/logs", new Logs()); // Run a command on the given server
+
+        // Multi threaded HttpServer https://stackoverflow.com/a/14729886/8445676
+        server.setExecutor(java.util.concurrent.Executors.newCachedThreadPool());
         server.start();
         System.out.println("HTTP server started, access it using: http://localhost:" + port);
     }
@@ -47,7 +50,11 @@ public class HttpApi {
         jsonObject.addProperty("started_since", server.getLastStartup());
         jsonObject.addProperty("closed_since", server.getLastStop());
 
-        jsonObject.addProperty("motd", server.getServerInfo().getMotd());
+        // Base64 encoded motd
+        String motd = server.getServerInfo().getMotd();
+        byte[] base64 = Base64.getEncoder().encode(motd.getBytes(StandardCharsets.UTF_8));
+        jsonObject.addProperty("motd", new String(base64, StandardCharsets.UTF_8));
+
         jsonObject.addProperty("players", server.getServerInfo().getPlayers().size());
         jsonObject.addProperty("address", server.getAddress().toString());
 
@@ -231,6 +238,61 @@ public class HttpApi {
                 OutputStream os = t.getResponseBody();
                 os.write(response.getBytes());
                 os.close();
+            }
+        }
+    }
+
+    static class Logs implements HttpHandler {
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            Matcher matcher = Pattern.compile("/logs/([^/]*)").matcher(t.getRequestURI().getPath());
+            t.getResponseHeaders().set("Content-Type", "text/event-stream;charset=utf-8");
+            t.getResponseHeaders().set("Cache-Control", "no-cache");
+
+            if (!matcher.find()) {
+                t.sendResponseHeaders(400, -1);
+            } else {
+                String serverName = matcher.group(1);
+
+                ServerOnDemand server = Main.serverController.findServerByName(serverName);
+                if (server == null) {
+                    t.sendResponseHeaders(404, -1);
+                    return;
+                }
+
+                Process process = server.getProcess();
+                /*OutputStream stdin = process.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(stdin));
+
+                String command = new String(t.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
+                System.out.println(command);
+
+                writer.write(command);
+                writer.flush();
+                writer.close();*/
+
+                if (process == null || !process.isAlive()) {
+                    t.sendResponseHeaders(503, -1);
+                    return;
+                }
+
+                t.sendResponseHeaders(200, 0);
+
+                OutputStream os = t.getResponseBody();
+
+                InputStream inputStream = process.getInputStream();
+                inputStream.mark(Integer.MAX_VALUE);
+                inputStream.reset();
+
+                BufferedReader stdin = new BufferedReader(new InputStreamReader(inputStream));
+                String s;
+                int i = 0;
+
+                while ((s = stdin.readLine()) != null) {
+                    String response = "id: " + i++ + "\n" + "event: log\ndata: " + s + "\n\n";
+                    os.write(response.getBytes());
+                    os.flush();
+                }
             }
         }
     }
