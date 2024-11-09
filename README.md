@@ -1,3 +1,6 @@
+> [!WARNING]
+> This plugin is no longer maintened. I recommend upgrading to Velocity and using [Pickaria/PterodactylPowerAction](https://github.com/Pickaria/PterodactylPowerAction) instead.
+
 # On demand server
 <h3 style="text-align: center;">BungeeCord plugin to start and stop minecraft servers when players are playing on.</h2>
 This is a BungeeCord/Waterfall plugin that can execute a command when a player tries to connect to a server that isn't running.
